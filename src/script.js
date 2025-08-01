@@ -10,9 +10,7 @@ class MultiTimer {
     this.timers = [];
     this.intervalIds = [];
     this.currentMaxTime = CONFIG.TIMERS.DEFAULT_MAX_TIME;
-    this.displayMode = CONFIG.TIME_FORMAT.DISPLAY_MODE;
     this.isFullscreen = false;
-    this.rotationLocked = false;
     this.autoStartEnabled = CONFIG.FEATURES.AUTO_START_ENABLED;
     this.dragState = {
       isDragging: false,
@@ -34,9 +32,16 @@ class MultiTimer {
       modalClose: null,
       confirmBtn: null,
       cancelBtn: null,
-      hoursInput: null,
       minutesInput: null,
       secondsInput: null,
+      // 종료음 선택 모달 요소들
+      soundModal: null,
+      soundModalClose: null,
+      soundConfirmBtn: null,
+      soundCancelBtn: null,
+      soundSelectBtn: null,
+      soundOptions: null,
+      previewBtns: null,
       // 전역 컨트롤 요소들
       runningCount: null
     };
@@ -115,9 +120,17 @@ class MultiTimer {
       this.domElements.modalClose = this.domElements.modal.querySelector('.modal-close');
       this.domElements.confirmBtn = document.getElementById('time-confirm-btn');
       this.domElements.cancelBtn = document.getElementById('time-cancel-btn');
-      this.domElements.hoursInput = document.getElementById('hours-input');
       this.domElements.minutesInput = document.getElementById('minutes-input');
       this.domElements.secondsInput = document.getElementById('seconds-input');
+      
+      // 종료음 선택 모달 요소들 캐싱
+      this.domElements.soundModal = document.getElementById('sound-select-modal');
+      this.domElements.soundModalClose = this.domElements.soundModal.querySelector('.modal-close');
+      this.domElements.soundConfirmBtn = document.getElementById('sound-confirm-btn');
+      this.domElements.soundCancelBtn = document.getElementById('sound-cancel-btn');
+      this.domElements.soundSelectBtn = document.getElementById('sound-select-btn');
+      this.domElements.soundOptions = this.domElements.soundModal.querySelectorAll('input[name="sound-option"]');
+      this.domElements.previewBtns = this.domElements.soundModal.querySelectorAll('.preview-btn');
       
       // 전역 컨트롤 요소들 캐싱
       this.domElements.runningCount = document.getElementById('running-count');
@@ -222,12 +235,6 @@ class MultiTimer {
     document.getElementById('stop-all-btn').addEventListener('click', () => this.stopAllTimers());
     document.getElementById('reset-all-btn').addEventListener('click', () => this.resetAllTimers());
     
-    // 시간 표시 모드 토글
-    document.getElementById('display-mode-toggle').addEventListener('change', (e) => {
-      this.displayMode = e.target.checked ? 'elapsed' : 'remaining';
-      this.updateAllDisplays();
-    });
-    
     // 자동 시작 토글
     document.getElementById('auto-start-toggle').addEventListener('change', (e) => {
       this.autoStartEnabled = e.target.checked;
@@ -254,12 +261,6 @@ class MultiTimer {
   bindRightPanelControls() {
     // 풀스크린 버튼
     document.getElementById('fullscreen-btn').addEventListener('click', () => this.toggleFullscreen());
-    
-    // 회전 방지 토글
-    document.getElementById('rotation-lock-toggle').addEventListener('change', (e) => {
-      this.rotationLocked = e.target.checked;
-      this.applyRotationLock();
-    });
   }
 
   // 모달 이벤트 바인딩
@@ -277,6 +278,28 @@ class MultiTimer {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         this.closeTimeInputModal();
+      }
+    });
+
+    // 종료음 선택 모달 이벤트
+    this.domElements.soundSelectBtn.addEventListener('click', () => this.showSoundSelectModal());
+    this.domElements.soundModalClose.addEventListener('click', () => this.closeSoundSelectModal());
+    this.domElements.soundCancelBtn.addEventListener('click', () => this.closeSoundSelectModal());
+    this.domElements.soundConfirmBtn.addEventListener('click', () => this.confirmSoundSelection());
+    
+    // 미리듣기 버튼 이벤트
+    this.domElements.previewBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const soundType = e.target.dataset.sound;
+        this.previewSound(soundType);
+      });
+    });
+
+    // 종료음 모달 외부 클릭 시 닫기
+    this.domElements.soundModal.addEventListener('click', (e) => {
+      if (e.target === this.domElements.soundModal) {
+        this.closeSoundSelectModal();
       }
     });
   }
@@ -387,11 +410,9 @@ class MultiTimer {
     this.currentEditingTimer = timerId;
     const timer = this.timers[timerId];
     
-    const hours = Math.floor(timer.totalTime / 3600);
-    const minutes = Math.floor((timer.totalTime % 3600) / 60);
+    const minutes = Math.floor(timer.totalTime / 60);
     const seconds = timer.totalTime % 60;
     
-    this.domElements.hoursInput.value = hours;
     this.domElements.minutesInput.value = minutes;
     this.domElements.secondsInput.value = seconds;
     
@@ -406,11 +427,10 @@ class MultiTimer {
 
   // 시간 입력 확인
   confirmTimeInput() {
-    const hours = Math.min(parseInt(this.domElements.hoursInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_HOURS);
     const minutes = Math.min(parseInt(this.domElements.minutesInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_MINUTES);
     const seconds = Math.min(parseInt(this.domElements.secondsInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_SECONDS);
     
-    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+    const totalSeconds = (minutes * 60) + seconds;
     
     if (totalSeconds > this.currentMaxTime) {
       alert(CONFIG.MESSAGES.ERROR.MAX_TIME_EXCEEDED);
@@ -674,6 +694,64 @@ class MultiTimer {
     }
   }
 
+  // 종료음 선택 모달 열기
+  showSoundSelectModal() {
+    // 현재 선택된 사운드 설정
+    const currentSound = CONFIG.FEATURES.SELECTED_SOUND;
+    const soundValue = currentSound.replace('TIMER_', '').toLowerCase();
+    const soundMap = {
+      '1': 'bell',
+      '2': 'chime', 
+      '3': 'beep',
+      '4': 'ding',
+      '5': 'alert'
+    };
+    const mappedValue = soundMap[soundValue] || 'bell';
+    
+    // 라디오 버튼 설정
+    this.domElements.soundOptions.forEach(option => {
+      option.checked = option.value === mappedValue;
+    });
+    
+    this.domElements.soundModal.style.display = 'block';
+  }
+
+  // 종료음 선택 모달 닫기
+  closeSoundSelectModal() {
+    this.domElements.soundModal.style.display = 'none';
+  }
+
+  // 종료음 선택 확인
+  confirmSoundSelection() {
+    const selectedOption = Array.from(this.domElements.soundOptions).find(option => option.checked);
+    if (selectedOption) {
+      const soundMap = {
+        'bell': 'TIMER_1',
+        'chime': 'TIMER_2',
+        'beep': 'TIMER_3',
+        'ding': 'TIMER_4',
+        'alert': 'TIMER_5'
+      };
+      CONFIG.FEATURES.SELECTED_SOUND = soundMap[selectedOption.value] || 'TIMER_1';
+      this.saveUserSettings(); // 설정 저장
+    }
+    this.closeSoundSelectModal();
+  }
+
+  // 종료음 미리듣기
+  async previewSound(soundType) {
+    const soundMap = {
+      'bell': 'TIMER_1',
+      'chime': 'TIMER_2',
+      'beep': 'TIMER_3',
+      'ding': 'TIMER_4',
+      'alert': 'TIMER_5'
+    };
+    const soundKey = soundMap[soundType] || 'TIMER_1';
+    const soundFile = CONFIG.SOUNDS[soundKey];
+    await this.playAlarmSound(soundFile);
+  }
+
   // 풀스크린 토글
   toggleFullscreen() {
     if (!CONFIG.FEATURES.FULLSCREEN_ENABLED) return;
@@ -698,16 +776,6 @@ class MultiTimer {
     }
   }
 
-  // 회전 방지 적용
-  applyRotationLock() {
-    if (this.rotationLocked && screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('landscape').catch(() => {
-        CONFIG_UTILS.debugLog('Screen orientation lock failed');
-      });
-    } else if (screen.orientation && screen.orientation.unlock) {
-      screen.orientation.unlock();
-    }
-  }
 
   // UI 업데이트 메서드들
   /**
@@ -725,11 +793,7 @@ class MultiTimer {
       return;
     }
     
-    const displayTime = this.displayMode === 'elapsed' 
-      ? timer.totalTime - timer.currentTime
-      : timer.currentTime;
-    
-    timeText.textContent = CONFIG_UTILS.formatTime(displayTime);
+    timeText.textContent = CONFIG_UTILS.formatTime(timer.currentTime);
   }
 
   /**
@@ -761,15 +825,8 @@ class MultiTimer {
     if (timer.totalTime === 0) return 0;
     
     const maxBarLength = (timer.totalTime / this.currentMaxTime) * 100;
-    
-    if (this.displayMode === 'elapsed') {
-      const elapsedTime = timer.totalTime - timer.currentTime;
-      const elapsedPercentage = (elapsedTime / timer.totalTime) * 100;
-      return (elapsedPercentage / 100) * maxBarLength;
-    } else {
-      const remainingPercentage = (timer.currentTime / timer.totalTime) * 100;
-      return (remainingPercentage / 100) * maxBarLength;
-    }
+    const remainingPercentage = (timer.currentTime / timer.totalTime) * 100;
+    return (remainingPercentage / 100) * maxBarLength;
   }
 
   /**
@@ -925,11 +982,10 @@ class MultiTimer {
     if (!CONFIG.FEATURES.AUTO_SAVE_SETTINGS) return;
     
     const settings = {
-      displayMode: this.displayMode,
       maxTime: this.currentMaxTime,
       labels: this.timers.map(timer => timer.label),
-      rotationLocked: this.rotationLocked,
-      autoStartEnabled: this.autoStartEnabled
+      autoStartEnabled: this.autoStartEnabled,
+      selectedSound: CONFIG.FEATURES.SELECTED_SOUND
     };
     
     try {
@@ -947,15 +1003,12 @@ class MultiTimer {
       if (saved) {
         const settings = JSON.parse(saved);
         
-        this.displayMode = settings.displayMode || CONFIG.TIME_FORMAT.DISPLAY_MODE;
         this.currentMaxTime = settings.maxTime || CONFIG.TIMERS.DEFAULT_MAX_TIME;
-        this.rotationLocked = settings.rotationLocked || false;
         this.autoStartEnabled = settings.autoStartEnabled !== undefined ? settings.autoStartEnabled : CONFIG.FEATURES.AUTO_START_ENABLED;
+        CONFIG.FEATURES.SELECTED_SOUND = settings.selectedSound || CONFIG.FEATURES.SELECTED_SOUND;
         
         // UI 요소 업데이트
-        document.getElementById('display-mode-toggle').checked = (this.displayMode === 'elapsed');
         document.getElementById('max-time-select').value = this.currentMaxTime;
-        document.getElementById('rotation-lock-toggle').checked = this.rotationLocked;
         document.getElementById('auto-start-toggle').checked = this.autoStartEnabled;
         
         // 라벨 복원
@@ -979,6 +1032,14 @@ document.addEventListener('fullscreenchange', () => {
   const app = window.multiTimerApp;
   if (app) {
     app.isFullscreen = !!document.fullscreenElement;
+    
+    // 풀스크린 모드에서 패널 숨기기/보이기
+    const appContainer = document.querySelector('.app-container');
+    if (app.isFullscreen) {
+      appContainer.classList.add('fullscreen-mode');
+    } else {
+      appContainer.classList.remove('fullscreen-mode');
+    }
   }
 });
 

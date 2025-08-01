@@ -3,9 +3,12 @@
 const CONFIG = {
   // 타이머 기본 설정
   TIMERS: {
-    COUNT: 5,
-    MIN_TIME: 60, // 1분 (초)
-    DEFAULT_MAX_TIME: 1800, // 30분 (초)
+    COUNT: 5,                    // 기본 타이머 개수
+    MIN_COUNT: 1,                // 최소 타이머 개수  
+    MAX_COUNT: 100,              // 최대 타이머 개수
+    TIMERS_PER_ROW: 10,          // 한 줄당 타이머 개수
+    MIN_TIME: 60,                // 1분 (초)
+    DEFAULT_MAX_TIME: 1800,      // 30분 (초)
     MAX_TIME_OPTIONS: [
       { value: 600, label: '10분' },
       { value: 900, label: '15분' },
@@ -14,11 +17,11 @@ const CONFIG = {
       { value: 3600, label: '60분' }
     ],
     DEFAULT_LABELS: [
-      '타이머 1',
-      '타이머 2', 
-      '타이머 3',
-      '타이머 4',
-      '타이머 5'
+      '1',
+      '2', 
+      '3',
+      '4',
+      '5'
     ]
   },
 
@@ -29,6 +32,13 @@ const CONFIG = {
     TIMER_3: '#45B7D1',
     TIMER_4: '#FFA726',
     TIMER_5: '#AB47BC',
+    // 동적 타이머를 위한 색상 배열 (순환 사용)
+    TIMER_COLORS: [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA726', '#AB47BC',
+      '#28A745', '#DC3545', '#6F42C1', '#FD7E14', '#20C997',
+      '#6C757D', '#F8F9FA', '#FF1744', '#00E676', '#2979FF',
+      '#FF5722', '#9C27B0', '#4CAF50', '#FFC107', '#00BCD4'
+    ],
     BACKGROUND: '#F8F9FA',
     PANEL_BG: '#FFFFFF',
     TEXT: '#212529',
@@ -86,7 +96,9 @@ const CONFIG = {
     KEYBOARD_SHORTCUTS: true,
     TOUCH_FEEDBACK: true,
     AUTO_SAVE_SETTINGS: true,
-    AUTO_START_ENABLED: true // 시간 설정 시 자동 시작 기본값
+    AUTO_START_ENABLED: true, // 시간 설정 시 자동 시작 기본값
+    SELECTED_SOUND: 'TIMER_1', // 선택된 종료음
+    DYNAMIC_TIMER_COUNT: true // 동적 타이머 개수 변경 허용
   },
 
   // 시간 형식 설정
@@ -172,21 +184,19 @@ Object.freeze(CONFIG.DEBUG);
 
 // 유틸리티 함수들
 const CONFIG_UTILS = {
-  // 타이머 색상 가져오기
+  // 타이머 색상 가져오기 (동적 색상 순환)
   getTimerColor: (timerId) => {
-    const colorKey = `TIMER_${timerId + 1}`;
-    return CONFIG.COLORS[colorKey] || CONFIG.COLORS.TIMER_1;
+    return CONFIG.COLORS.TIMER_COLORS[timerId % CONFIG.COLORS.TIMER_COLORS.length];
   },
 
-  // 타이머 사운드 가져오기
+  // 타이머 사운드 가져오기 (선택된 소리 사용)
   getTimerSound: (timerId) => {
-    const soundKey = `TIMER_${timerId + 1}`;
-    return CONFIG.SOUNDS[soundKey] || CONFIG.SOUNDS.TIMER_1;
+    return CONFIG.SOUNDS[CONFIG.FEATURES.SELECTED_SOUND] || CONFIG.SOUNDS.TIMER_1;
   },
 
   // 타이머 기본 라벨 가져오기
   getTimerLabel: (timerId) => {
-    return CONFIG.TIMERS.DEFAULT_LABELS[timerId] || `타이머 ${timerId + 1}`;
+    return CONFIG.TIMERS.DEFAULT_LABELS[timerId] || `${timerId + 1}`;
   },
 
   // 시간 형식 변환 (초 → mm:ss 또는 hh:mm:ss)

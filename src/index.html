@@ -21,14 +21,10 @@
             </div>
 
             <div class="panel-section">
-                <h3>시간 표시</h3>
-                <div class="toggle-container">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="display-mode-toggle">
-                        <span class="slider"></span>
-                        <span class="toggle-label">남은 시간 / 경과 시간</span>
-                    </label>
-                </div>
+                <h3>타이머 개수</h3>
+                <input type="number" id="timer-count-input" class="timer-count-input" 
+                       min="1" max="100" value="5" step="1">
+                <button id="apply-timer-count" class="control-btn">적용</button>
             </div>
 
 
@@ -183,28 +179,25 @@
                     <span class="btn-icon">⛶</span>
                     <span class="btn-text">풀스크린</span>
                 </button>
-                <div class="toggle-container">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="rotation-lock-toggle">
-                        <span class="slider"></span>
-                        <span class="toggle-label">회전 방지</span>
-                    </label>
-                </div>
-                <div class="toggle-container">
-                    <label class="toggle-switch">
+                <div class="auto-start-setting">
+                    <label class="auto-start-label">
                         <input type="checkbox" id="auto-start-toggle" checked>
-                        <span class="slider"></span>
-                        <span class="toggle-label">자동 시작</span>
+                        <span class="checkmark"></span>
+                        자동 시작
                     </label>
                 </div>
+                <button id="sound-select-btn" class="control-btn">
+                    <span class="btn-icon">🔊</span>
+                    <span class="btn-text">종료음</span>
+                </button>
             </div>
 
             <div class="panel-section">
                 <h3>도움말</h3>
                 <div class="help-text">
+                    <p>• 시간 표시를 클릭하여 정확한 시간 입력</p>
                     <p>• 막대를 드래그하여 시간 설정</p>
-                    <p>• 막대를 클릭하여 정확한 시간 입력</p>
-                    <p>• 각 타이머 독립적으로 동작</p>
+                    <p>• 자동 시작을 체크하면 시간 설정 시 바로 실행</p>
                 </div>
             </div>
         </div>
@@ -214,14 +207,10 @@
     <div id="time-input-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>정확한 시간 설정</h3>
+                <h3>시간 설정</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="time-input-group">
-                    <label>시간:</label>
-                    <input type="number" id="hours-input" min="0" max="23" value="0">
-                </div>
                 <div class="time-input-group">
                     <label>분:</label>
                     <input type="number" id="minutes-input" min="0" max="59" value="0">
@@ -234,6 +223,57 @@
             <div class="modal-footer">
                 <button id="time-confirm-btn" class="control-btn start-btn">확인</button>
                 <button id="time-cancel-btn" class="control-btn">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 종료음 선택 모달 -->
+    <div id="sound-select-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>종료음 선택</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="sound-option-group">
+                    <label>
+                        <input type="radio" name="sound-option" value="bell" checked>
+                        <span class="radio-label">벨 소리 🔔</span>
+                        <button class="preview-btn" data-sound="bell">미리듣기</button>
+                    </label>
+                </div>
+                <div class="sound-option-group">
+                    <label>
+                        <input type="radio" name="sound-option" value="chime">
+                        <span class="radio-label">차임 소리 🎐</span>
+                        <button class="preview-btn" data-sound="chime">미리듣기</button>
+                    </label>
+                </div>
+                <div class="sound-option-group">
+                    <label>
+                        <input type="radio" name="sound-option" value="beep">
+                        <span class="radio-label">비프 소리 📢</span>
+                        <button class="preview-btn" data-sound="beep">미리듣기</button>
+                    </label>
+                </div>
+                <div class="sound-option-group">
+                    <label>
+                        <input type="radio" name="sound-option" value="ding">
+                        <span class="radio-label">딩 소리 🔊</span>
+                        <button class="preview-btn" data-sound="ding">미리듣기</button>
+                    </label>
+                </div>
+                <div class="sound-option-group">
+                    <label>
+                        <input type="radio" name="sound-option" value="alert">
+                        <span class="radio-label">알림 소리 ⚠️</span>
+                        <button class="preview-btn" data-sound="alert">미리듣기</button>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="sound-confirm-btn" class="control-btn start-btn">확인</button>
+                <button id="sound-cancel-btn" class="control-btn">취소</button>
             </div>
         </div>
     </div>
