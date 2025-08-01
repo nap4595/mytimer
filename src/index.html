@@ -41,133 +41,17 @@
 
             <div class="panel-section">
                 <h3>타이머 라벨</h3>
-                <div class="label-inputs">
-                    <input type="text" id="label-0" class="label-input" placeholder="타이머 1" maxlength="10">
-                    <input type="text" id="label-1" class="label-input" placeholder="타이머 2" maxlength="10">
-                    <input type="text" id="label-2" class="label-input" placeholder="타이머 3" maxlength="10">
-                    <input type="text" id="label-3" class="label-input" placeholder="타이머 4" maxlength="10">
-                    <input type="text" id="label-4" class="label-input" placeholder="타이머 5" maxlength="10">
+                <button id="manage-labels-btn" class="control-btn">라벨 관리</button>
+                <div class="label-inputs" id="label-inputs-container">
+                    <!-- 동적으로 생성됨 -->
                 </div>
             </div>
         </div>
 
         <!-- 중앙 타이머 영역 (70%) -->
         <div class="timer-area">
-            <div class="timer-container">
-                <!-- 타이머 1 -->
-                <div class="timer-row" data-timer-id="0">
-                    <div class="timer-label">
-                        <span class="label-text">타이머 1</span>
-                    </div>
-                    <div class="timer-bar-container">
-                        <div class="timer-bar" data-color="#FF6B6B">
-                            <div class="timer-fill"></div>
-                        </div>
-                        <div class="time-display">
-                            <span class="time-text">00:00</span>
-                        </div>
-                    </div>
-                    <div class="timer-controls">
-                        <button class="play-pause-btn" data-timer-id="0">
-                            <span class="btn-icon">▶</span>
-                        </button>
-                        <button class="reset-btn" data-timer-id="0">
-                            <span class="btn-icon">✖</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 타이머 2 -->
-                <div class="timer-row" data-timer-id="1">
-                    <div class="timer-label">
-                        <span class="label-text">타이머 2</span>
-                    </div>
-                    <div class="timer-bar-container">
-                        <div class="timer-bar" data-color="#4ECDC4">
-                            <div class="timer-fill"></div>
-                        </div>
-                        <div class="time-display">
-                            <span class="time-text">00:00</span>
-                        </div>
-                    </div>
-                    <div class="timer-controls">
-                        <button class="play-pause-btn" data-timer-id="1">
-                            <span class="btn-icon">▶</span>
-                        </button>
-                        <button class="reset-btn" data-timer-id="1">
-                            <span class="btn-icon">✖</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 타이머 3 -->
-                <div class="timer-row" data-timer-id="2">
-                    <div class="timer-label">
-                        <span class="label-text">타이머 3</span>
-                    </div>
-                    <div class="timer-bar-container">
-                        <div class="timer-bar" data-color="#45B7D1">
-                            <div class="timer-fill"></div>
-                        </div>
-                        <div class="time-display">
-                            <span class="time-text">00:00</span>
-                        </div>
-                    </div>
-                    <div class="timer-controls">
-                        <button class="play-pause-btn" data-timer-id="2">
-                            <span class="btn-icon">▶</span>
-                        </button>
-                        <button class="reset-btn" data-timer-id="2">
-                            <span class="btn-icon">✖</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 타이머 4 -->
-                <div class="timer-row" data-timer-id="3">
-                    <div class="timer-label">
-                        <span class="label-text">타이머 4</span>
-                    </div>
-                    <div class="timer-bar-container">
-                        <div class="timer-bar" data-color="#FFA726">
-                            <div class="timer-fill"></div>
-                        </div>
-                        <div class="time-display">
-                            <span class="time-text">00:00</span>
-                        </div>
-                    </div>
-                    <div class="timer-controls">
-                        <button class="play-pause-btn" data-timer-id="3">
-                            <span class="btn-icon">▶</span>
-                        </button>
-                        <button class="reset-btn" data-timer-id="3">
-                            <span class="btn-icon">✖</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 타이머 5 -->
-                <div class="timer-row" data-timer-id="4">
-                    <div class="timer-label">
-                        <span class="label-text">타이머 5</span>
-                    </div>
-                    <div class="timer-bar-container">
-                        <div class="timer-bar" data-color="#AB47BC">
-                            <div class="timer-fill"></div>
-                        </div>
-                        <div class="time-display">
-                            <span class="time-text">00:00</span>
-                        </div>
-                    </div>
-                    <div class="timer-controls">
-                        <button class="play-pause-btn" data-timer-id="4">
-                            <span class="btn-icon">▶</span>
-                        </button>
-                        <button class="reset-btn" data-timer-id="4">
-                            <span class="btn-icon">✖</span>
-                        </button>
-                    </div>
-                </div>
+            <div class="timer-container" id="timer-container">
+                <!-- 동적으로 생성됨 -->
             </div>
         </div>
 

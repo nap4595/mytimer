@@ -94,18 +94,19 @@ body {
 .timer-container {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: row; /* 세로 막대들을 가로로 배치 */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(10% - 8px), 1fr));
   gap: 8px;
   padding: 10px;
+  align-content: start;
+  overflow-y: auto;
 }
 
 /* 타이머 행 */
 .timer-row {
   display: flex;
   flex-direction: column;
-  width: calc(20% - 8px); /* 5개 열, gap 고려 */
-  height: 100%; /* 전체 높이 사용 */
+  min-height: 300px; /* 최소 높이 설정 */
   background-color: var(--panel-bg);
   border-radius: 12px;
   padding: 0;
@@ -757,4 +758,44 @@ select:focus {
 
 .fullscreen-mode .timer-area {
   width: 100%;
+}
+
+/* 동적 타이머 크기 조정 */
+.timer-container[data-timer-count="1"] .timer-row { min-height: 400px; font-size: 1.2em; }
+.timer-container[data-timer-count="2"] .timer-row { min-height: 380px; font-size: 1.1em; }
+.timer-container[data-timer-count="3"] .timer-row { min-height: 360px; font-size: 1.05em; }
+.timer-container[data-timer-count="4"] .timer-row { min-height: 340px; font-size: 1em; }
+.timer-container[data-timer-count="5"] .timer-row { min-height: 320px; font-size: 1em; }
+
+/* 6-10개 타이머 */
+.timer-container[data-timer-count="6"] .timer-row,
+.timer-container[data-timer-count="7"] .timer-row,
+.timer-container[data-timer-count="8"] .timer-row,
+.timer-container[data-timer-count="9"] .timer-row,
+.timer-container[data-timer-count="10"] .timer-row { 
+  min-height: 280px; 
+  font-size: 0.95em; 
+}
+
+/* 11-20개 타이머 */
+.timer-container[data-timer-count] .timer-row {
+  min-height: 250px;
+  font-size: 0.9em;
+}
+
+/* 21-50개 타이머 */
+[data-timer-count] .timer-row {
+  min-height: 200px;
+  font-size: 0.85em;
+}
+
+/* 51-100개 타이머 */
+[data-timer-count] .timer-row {
+  min-height: 150px;
+  font-size: 0.8em;
+}
+
+/* 더 많은 타이머일 때 그리드 조정 */
+.timer-container[data-timer-count] {
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
 }

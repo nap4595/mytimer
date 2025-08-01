@@ -10,7 +10,8 @@
       "mcp__playwright__browser_handle_dialog",
       "Bash(git add:*)",
       "Bash(git push:*)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "mcp__playwright__browser_close"
     ],
     "deny": []
   }

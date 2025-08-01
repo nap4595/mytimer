@@ -10,8 +10,10 @@ class MultiTimer {
     this.timers = [];
     this.intervalIds = [];
     this.currentMaxTime = CONFIG.TIMERS.DEFAULT_MAX_TIME;
+    this.currentTimerCount = CONFIG.TIMERS.COUNT; // 현재 타이머 개수
     this.isFullscreen = false;
     this.autoStartEnabled = CONFIG.FEATURES.AUTO_START_ENABLED;
+    this.selectedSound = CONFIG.FEATURES.SELECTED_SOUND; // frozen CONFIG 대신 별도 상태로 관리
     this.dragState = {
       isDragging: false,
       timerId: null,
@@ -50,6 +52,7 @@ class MultiTimer {
     this.rafIds = [];
 
     try {
+      this.createTimerHTML(); // 먼저 HTML 생성
       this.initializeTimers();
       this.cacheDOMElements();
       this.updateAllDisplays(); // DOM 캐싱 후 UI 업데이트
@@ -63,11 +66,102 @@ class MultiTimer {
   }
 
   /**
+   * 타이머 HTML 동적 생성
+   * @private
+   */
+  createTimerHTML() {
+    const timerContainer = document.getElementById('timer-container');
+    const labelContainer = document.getElementById('label-inputs-container');
+    
+    // 기존 내용 지우기
+    timerContainer.innerHTML = '';
+    labelContainer.innerHTML = '';
+    
+    // 타이머 개수 데이터 속성 설정
+    timerContainer.setAttribute('data-timer-count', this.currentTimerCount);
+    
+    for (let i = 0; i < this.currentTimerCount; i++) {
+      // 타이머 HTML 생성
+      const timerHTML = this.createSingleTimerHTML(i);
+      timerContainer.appendChild(timerHTML);
+      
+      // 라벨 입력 필드 생성
+      const labelInput = this.createLabelInputHTML(i);
+      labelContainer.appendChild(labelInput);
+    }
+  }
+
+  /**
+   * 단일 타이머 HTML 생성
+   * @param {number} index - 타이머 인덱스
+   * @returns {HTMLElement} 타이머 DOM 요소
+   * @private
+   */
+  createSingleTimerHTML(index) {
+    const timerRow = document.createElement('div');
+    timerRow.className = 'timer-row';
+    timerRow.setAttribute('data-timer-id', index);
+    
+    const color = CONFIG_UTILS.getTimerColor(index);
+    const label = CONFIG_UTILS.getTimerLabel(index);
+    
+    timerRow.innerHTML = `
+      <div class="timer-label">
+        <span class="label-text">${label}</span>
+      </div>
+      <div class="timer-bar-container">
+        <div class="timer-bar" data-color="${color}">
+          <div class="timer-fill"></div>
+        </div>
+        <div class="time-display">
+          <span class="time-text">00:00</span>
+        </div>
+      </div>
+      <div class="timer-controls">
+        <button class="play-pause-btn" data-timer-id="${index}">
+          <span class="btn-icon">▶</span>
+        </button>
+        <button class="reset-btn" data-timer-id="${index}">
+          <span class="btn-icon">✖</span>
+        </button>
+      </div>
+    `;
+    
+    // 타이머 색상 동적 적용
+    const timerFill = timerRow.querySelector('.timer-fill');
+    timerFill.style.backgroundColor = color;
+    
+    return timerRow;
+  }
+
+  /**
+   * 라벨 입력 필드 HTML 생성
+   * @param {number} index - 타이머 인덱스
+   * @returns {HTMLElement} 라벨 입력 DOM 요소
+   * @private
+   */
+  createLabelInputHTML(index) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = `label-${index}`;
+    input.className = 'label-input';
+    input.placeholder = `타이머 ${index + 1}`;
+    input.maxLength = 10;
+    input.value = CONFIG_UTILS.getTimerLabel(index);
+    
+    return input;
+  }
+
+  /**
    * 타이머 초기화 - 모든 타이머 객체 생성
    * @private
    */
   initializeTimers() {
-    for (let i = 0; i < CONFIG.TIMERS.COUNT; i++) {
+    // 타이머 배열 초기화
+    this.timers = [];
+    this.intervalIds = [];
+    
+    for (let i = 0; i < this.currentTimerCount; i++) {
       this.timers.push(this.createTimerObject(i));
       this.intervalIds.push(null);
     }
@@ -88,7 +182,7 @@ class MultiTimer {
       isRunning: false,
       isCompleted: false,
       color: CONFIG_UTILS.getTimerColor(id),
-      sound: CONFIG_UTILS.getTimerSound(id),
+      sound: this.getTimerSound(id),
       startTime: null,
       expectedTime: null
     };
@@ -100,8 +194,16 @@ class MultiTimer {
    */
   cacheDOMElements() {
     try {
-      // 타이머 관련 요소들 캐싱
-      for (let i = 0; i < CONFIG.TIMERS.COUNT; i++) {
+      // 기존 배열 초기화
+      this.domElements.timerRows = [];
+      this.domElements.timerFills = [];
+      this.domElements.timeTexts = [];
+      this.domElements.playButtons = [];
+      this.domElements.labelTexts = [];
+      this.domElements.timerBars = [];
+      
+      // 동적 타이머 관련 요소들 캐싱
+      for (let i = 0; i < this.currentTimerCount; i++) {
         const timerRow = document.querySelector(`[data-timer-id="${i}"]`);
         if (!timerRow) {
           throw new Error(`Timer row ${i} not found`);
@@ -154,6 +256,9 @@ class MultiTimer {
     
     // 왼쪽 패널 컨트롤
     this.bindLeftPanelControls();
+    
+    // 타이머 개수 변경
+    this.bindTimerCountControls();
     
     // 오른쪽 패널 컨트롤
     this.bindRightPanelControls();
@@ -249,6 +354,87 @@ class MultiTimer {
     });
     
     // 라벨 입력
+    document.querySelectorAll('.label-input').forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        this.timers[index].label = e.target.value || CONFIG_UTILS.getTimerLabel(index);
+        this.updateTimerLabel(index);
+      });
+    });
+  }
+
+  // 타이머 개수 변경 컨트롤 바인딩
+  bindTimerCountControls() {
+    const timerCountInput = document.getElementById('timer-count-input');
+    const applyBtn = document.getElementById('apply-timer-count');
+    
+    // 타이머 개수 입력 필드 현재 값 설정
+    timerCountInput.value = this.currentTimerCount;
+    
+    // 적용 버튼 클릭
+    applyBtn.addEventListener('click', () => {
+      const newCount = parseInt(timerCountInput.value);
+      if (this.validateTimerCount(newCount)) {
+        this.changeTimerCount(newCount);
+      }
+    });
+    
+    // Enter 키 처리
+    timerCountInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        applyBtn.click();
+      }
+    });
+  }
+
+  // 타이머 개수 유효성 검사
+  validateTimerCount(count) {
+    if (isNaN(count) || count < CONFIG.TIMERS.MIN_COUNT || count > CONFIG.TIMERS.MAX_COUNT) {
+      alert(`타이머 개수는 ${CONFIG.TIMERS.MIN_COUNT}개에서 ${CONFIG.TIMERS.MAX_COUNT}개 사이여야 합니다.`);
+      return false;
+    }
+    return true;
+  }
+
+  // 타이머 개수 변경
+  changeTimerCount(newCount) {
+    if (newCount === this.currentTimerCount) return;
+    
+    // 실행 중인 타이머들 정지
+    this.stopAllTimers();
+    
+    // 새로운 타이머 개수 설정
+    this.currentTimerCount = newCount;
+    
+    // HTML 재생성
+    this.createTimerHTML();
+    
+    // 타이머 배열 재초기화
+    this.initializeTimers();
+    
+    // DOM 요소 재캐싱
+    this.cacheDOMElements();
+    
+    // 이벤트 재바인딩
+    this.rebindDynamicEvents();
+    
+    // 실행 중 개수 업데이트
+    this.updateRunningCount();
+    
+    CONFIG_UTILS.debugLog(`Timer count changed to ${newCount}`);
+  }
+
+  // 동적 이벤트 재바인딩
+  rebindDynamicEvents() {
+    // 드래그 이벤트 재바인딩
+    this.bindDragEvents();
+    
+    // 클릭 이벤트 재바인딩  
+    this.bindClickEvents();
+    
+    // 타이머 컨트롤 재바인딩
+    this.bindTimerControls();
+    
+    // 라벨 입력 이벤트 재바인딩
     document.querySelectorAll('.label-input').forEach((input, index) => {
       input.addEventListener('input', (e) => {
         this.timers[index].label = e.target.value || CONFIG_UTILS.getTimerLabel(index);
@@ -667,6 +853,11 @@ class MultiTimer {
     this.domElements.timerRows[timerId].classList.remove('completed');
   }
 
+  // 타이머 사운드 가져오기 (선택된 소리 사용)
+  getTimerSound(timerId) {
+    return CONFIG.SOUNDS[this.selectedSound] || CONFIG.SOUNDS.TIMER_1;
+  }
+
   // 알람 소리 재생
   async playAlarmSound(soundFile) {
     try {
@@ -697,7 +888,7 @@ class MultiTimer {
   // 종료음 선택 모달 열기
   showSoundSelectModal() {
     // 현재 선택된 사운드 설정
-    const currentSound = CONFIG.FEATURES.SELECTED_SOUND;
+    const currentSound = this.selectedSound;
     const soundValue = currentSound.replace('TIMER_', '').toLowerCase();
     const soundMap = {
       '1': 'bell',
@@ -732,7 +923,7 @@ class MultiTimer {
         'ding': 'TIMER_4',
         'alert': 'TIMER_5'
       };
-      CONFIG.FEATURES.SELECTED_SOUND = soundMap[selectedOption.value] || 'TIMER_1';
+      this.selectedSound = soundMap[selectedOption.value] || 'TIMER_1';
       this.saveUserSettings(); // 설정 저장
     }
     this.closeSoundSelectModal();
@@ -934,7 +1125,7 @@ class MultiTimer {
 
   updateRunningCount() {
     const runningCount = this.timers.filter(timer => timer.isRunning).length;
-    this.domElements.runningCount.textContent = `${runningCount}/${CONFIG.TIMERS.COUNT} 실행 중`;
+    this.domElements.runningCount.textContent = `${runningCount}/${this.currentTimerCount} 실행 중`;
   }
 
   /**
@@ -983,9 +1174,10 @@ class MultiTimer {
     
     const settings = {
       maxTime: this.currentMaxTime,
+      timerCount: this.currentTimerCount,
       labels: this.timers.map(timer => timer.label),
       autoStartEnabled: this.autoStartEnabled,
-      selectedSound: CONFIG.FEATURES.SELECTED_SOUND
+      selectedSound: this.selectedSound
     };
     
     try {
@@ -1005,11 +1197,18 @@ class MultiTimer {
         
         this.currentMaxTime = settings.maxTime || CONFIG.TIMERS.DEFAULT_MAX_TIME;
         this.autoStartEnabled = settings.autoStartEnabled !== undefined ? settings.autoStartEnabled : CONFIG.FEATURES.AUTO_START_ENABLED;
-        CONFIG.FEATURES.SELECTED_SOUND = settings.selectedSound || CONFIG.FEATURES.SELECTED_SOUND;
+        this.selectedSound = settings.selectedSound || CONFIG.FEATURES.SELECTED_SOUND;
+        
+        // 타이머 개수 복원 (저장된 개수가 있으면 사용)
+        if (settings.timerCount && settings.timerCount !== this.currentTimerCount) {
+          this.currentTimerCount = settings.timerCount;
+          // HTML 재생성 및 재초기화가 필요하지만 이미 초기화 과정에서 처리됨
+        }
         
         // UI 요소 업데이트
         document.getElementById('max-time-select').value = this.currentMaxTime;
         document.getElementById('auto-start-toggle').checked = this.autoStartEnabled;
+        document.getElementById('timer-count-input').value = this.currentTimerCount;
         
         // 라벨 복원
         if (settings.labels) {
