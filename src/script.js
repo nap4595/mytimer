@@ -13,7 +13,7 @@ class MultiTimer {
     this.displayMode = CONFIG.TIME_FORMAT.DISPLAY_MODE;
     this.isFullscreen = false;
     this.rotationLocked = false;
-    this.lastDragEndTime = 0;
+    this.autoStartEnabled = CONFIG.FEATURES.AUTO_START_ENABLED;
     this.dragState = {
       isDragging: false,
       timerId: null,
@@ -47,6 +47,7 @@ class MultiTimer {
     try {
       this.initializeTimers();
       this.cacheDOMElements();
+      this.updateAllDisplays(); // DOM 캐싱 후 UI 업데이트
       this.bindEvents();
       this.loadUserSettings();
       CONFIG_UTILS.debugLog('MultiTimer initialized successfully');
@@ -65,8 +66,6 @@ class MultiTimer {
       this.timers.push(this.createTimerObject(i));
       this.intervalIds.push(null);
     }
-    
-    this.updateAllDisplays();
   }
 
   /**
@@ -172,109 +171,18 @@ class MultiTimer {
     document.addEventListener('touchend', () => this.endDrag());
   }
 
-  // 클릭 이벤트 바인딩 (정밀 시간 입력)
+  // 시간 표시 박스 클릭 이벤트 바인딩 (정밀 시간 입력)
   bindClickEvents() {
-    document.querySelectorAll('.timer-bar').forEach((bar, index) => {
-      this.setupClickDetection(bar, index);
-      this.setupDirectClickHandler(bar, index);
-    });
-  }
-
-  /**
-   * 클릭 감지 설정 - 드래그와 클릭을 구분하는 이벤트 핸들러
-   * @param {HTMLElement} bar - 타이머 바 요소
-   * @param {number} index - 타이머 인덱스
-   * @private
-   */
-  setupClickDetection(bar, index) {
-    let clickStartTime = 0;
-    let clickStartPos = { x: 0, y: 0 };
-    let hasMovedForClick = false;
-    
-    const handleClickStart = (e) => {
-      if (this.dragState.isDragging) return;
-      
-      clickStartTime = Date.now();
-      const pos = e.touches ? e.touches[0] : e;
-      clickStartPos = { x: pos.clientX, y: pos.clientY };
-      hasMovedForClick = false;
-      
-      CONFIG_UTILS.debugLog(`Click start detected on timer ${index}`);
-    };
-    
-    const handleClickMove = (e) => {
-      if (clickStartTime === 0 || this.dragState.isDragging) return;
-      
-      const pos = e.touches ? e.touches[0] : e;
-      const deltaX = Math.abs(pos.clientX - clickStartPos.x);
-      const deltaY = Math.abs(pos.clientY - clickStartPos.y);
-      
-      if (deltaX > CONFIG.UI.TOUCH.DRAG_THRESHOLD || deltaY > CONFIG.UI.TOUCH.DRAG_THRESHOLD) {
-        hasMovedForClick = true;
-      }
-    };
-    
-    const handleClickEnd = (e) => {
-      if (clickStartTime === 0 || this.dragState.isDragging) return;
-      
-      const endTime = Date.now();
-      const duration = endTime - clickStartTime;
-      
-      CONFIG_UTILS.debugLog(`Click end: duration=${duration}ms, moved=${hasMovedForClick}, dragging=${this.dragState.isDragging}`);
-      
-      if (!hasMovedForClick && duration < CONFIG.UI.INTERACTION.CLICK_DURATION_MAX && !this.dragState.isDragging) {
-        this.handleTimerClick(e, index);
-      }
-      
-      clickStartTime = 0;
-      hasMovedForClick = false;
-    };
-    
-    bar.addEventListener('mousedown', handleClickStart);
-    bar.addEventListener('mousemove', handleClickMove);
-    bar.addEventListener('mouseup', handleClickEnd);
-    bar.addEventListener('touchstart', handleClickStart, { passive: false });
-    bar.addEventListener('touchmove', handleClickMove, { passive: false });
-    bar.addEventListener('touchend', handleClickEnd);
-  }
-
-  /**
-   * 직접 클릭 핸들러 설정
-   * @param {HTMLElement} bar - 타이머 바 요소
-   * @param {number} index - 타이머 인덱스
-   * @private
-   */
-  setupDirectClickHandler(bar, index) {
-    bar.addEventListener('click', (e) => {
-      if (this.dragState.isDragging || Date.now() - this.lastDragEndTime < CONFIG.UI.INTERACTION.DRAG_END_DELAY) {
-        e.preventDefault();
+    document.querySelectorAll('.time-display').forEach((timeDisplay, index) => {
+      timeDisplay.addEventListener('click', (e) => {
         e.stopPropagation();
-        return;
-      }
-      
-      this.handleTimerClick(e, index);
-      CONFIG_UTILS.debugLog(`Direct click on timer ${index}`);
+        this.openTimeInputModal(index);
+        CONFIG_UTILS.debugLog(`Time display clicked for timer ${index}`);
+      });
     });
   }
 
-  /**
-   * 타이머 클릭 처리 - 완료된 타이머는 리셋, 그 외는 모달 열기
-   * @param {Event} e - 클릭 이벤트
-   * @param {number} index - 타이머 인덱스
-   * @private
-   */
-  handleTimerClick(e, index) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const timer = this.timers[index];
-    if (timer.isCompleted) {
-      this.resetTimer(index);
-    } else {
-      this.openTimeInputModal(index);
-    }
-    CONFIG_UTILS.debugLog(`Processing click for timer ${index}`);
-  }
+  // 복잡한 클릭 감지 로직 제거됨 - 시간 표시 박스 클릭으로 단순화
 
   // 개별 타이머 컨트롤 바인딩
   bindTimerControls() {
@@ -304,15 +212,7 @@ class MultiTimer {
       });
     });
     
-    // 타이머 바 클릭 시 완료 알림 종료
-    document.querySelectorAll('.timer-bar').forEach((bar, index) => {
-      bar.addEventListener('click', (e) => {
-        const timer = this.timers[index];
-        if (timer.isCompleted) {
-          this.resetTimer(index);
-        }
-      });
-    });
+    // 타이머 바 클릭 기능 제거됨 - 드래그 전용
   }
 
   // 왼쪽 패널 컨트롤 바인딩
@@ -326,6 +226,12 @@ class MultiTimer {
     document.getElementById('display-mode-toggle').addEventListener('change', (e) => {
       this.displayMode = e.target.checked ? 'elapsed' : 'remaining';
       this.updateAllDisplays();
+    });
+    
+    // 자동 시작 토글
+    document.getElementById('auto-start-toggle').addEventListener('change', (e) => {
+      this.autoStartEnabled = e.target.checked;
+      CONFIG_UTILS.debugLog(`Auto-start ${this.autoStartEnabled ? 'enabled' : 'disabled'}`);
     });
     
     // 최대 시간 설정
@@ -459,15 +365,14 @@ class MultiTimer {
     timerBar.classList.remove('dragging');
     document.body.style.cursor = 'default';
     
-    // 드래그로 시간이 설정되었다면 자동으로 타이머 시작
+    // 드래그로 시간이 설정되었고 자동 시작이 활성화되어 있다면 타이머 시작
     const timer = this.timers[timerId];
-    if (timer.totalTime > 0) {
+    if (timer.totalTime > 0 && this.autoStartEnabled) {
       this.startTimer(timerId);
+      CONFIG_UTILS.debugLog(`Drag ended for timer ${timerId}, auto-starting timer`);
+    } else if (timer.totalTime > 0) {
+      CONFIG_UTILS.debugLog(`Drag ended for timer ${timerId}, auto-start disabled - staying in ready state`);
     }
-    
-    CONFIG_UTILS.debugLog(`Drag ended for timer ${timerId}, auto-starting timer`);
-    
-    this.lastDragEndTime = Date.now(); // 드래그 종료 시간 기록
     
     this.dragState = {
       isDragging: false,
@@ -520,9 +425,12 @@ class MultiTimer {
     const timerId = this.currentEditingTimer;
     this.updateTimerTime(timerId, totalSeconds);
     
-    // 정밀 시간 입력 후에도 자동으로 타이머 시작
-    if (totalSeconds > 0) {
+    // 정밀 시간 입력 후 자동 시작이 활성화되어 있다면 타이머 시작
+    if (totalSeconds > 0 && this.autoStartEnabled) {
       this.startTimer(timerId);
+      CONFIG_UTILS.debugLog(`Time input confirmed for timer ${timerId}, auto-starting timer`);
+    } else if (totalSeconds > 0) {
+      CONFIG_UTILS.debugLog(`Time input confirmed for timer ${timerId}, auto-start disabled - staying in ready state`);
     }
     
     this.closeTimeInputModal();
@@ -1020,7 +928,8 @@ class MultiTimer {
       displayMode: this.displayMode,
       maxTime: this.currentMaxTime,
       labels: this.timers.map(timer => timer.label),
-      rotationLocked: this.rotationLocked
+      rotationLocked: this.rotationLocked,
+      autoStartEnabled: this.autoStartEnabled
     };
     
     try {
@@ -1041,11 +950,13 @@ class MultiTimer {
         this.displayMode = settings.displayMode || CONFIG.TIME_FORMAT.DISPLAY_MODE;
         this.currentMaxTime = settings.maxTime || CONFIG.TIMERS.DEFAULT_MAX_TIME;
         this.rotationLocked = settings.rotationLocked || false;
+        this.autoStartEnabled = settings.autoStartEnabled !== undefined ? settings.autoStartEnabled : CONFIG.FEATURES.AUTO_START_ENABLED;
         
         // UI 요소 업데이트
         document.getElementById('display-mode-toggle').checked = (this.displayMode === 'elapsed');
         document.getElementById('max-time-select').value = this.currentMaxTime;
         document.getElementById('rotation-lock-toggle').checked = this.rotationLocked;
+        document.getElementById('auto-start-toggle').checked = this.autoStartEnabled;
         
         // 라벨 복원
         if (settings.labels) {

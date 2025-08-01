@@ -85,7 +85,8 @@ const CONFIG = {
     ROTATION_LOCK_ENABLED: true,
     KEYBOARD_SHORTCUTS: true,
     TOUCH_FEEDBACK: true,
-    AUTO_SAVE_SETTINGS: true
+    AUTO_SAVE_SETTINGS: true,
+    AUTO_START_ENABLED: true // 시간 설정 시 자동 시작 기본값
   },
 
   // 시간 형식 설정

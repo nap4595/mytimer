@@ -197,49 +197,31 @@ body {
   background-color: var(--timer-5-color);
 }
 
-/* 타이머 핸들 (드래그용) */
-.timer-handle {
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 12px;
-  background-color: #FFFFFF;
-  border: 2px solid var(--border-color);
-  border-radius: 6px;
-  cursor: ns-resize;
-  opacity: 1;
-  transition: all var(--transition-fast);
-  z-index: 10;
-}
+/* 드래그 핸들 제거됨 - 전체 막대에서 드래그 가능 */
 
-.timer-bar:hover .timer-handle {
-  opacity: 1;
-  border-color: var(--text-color);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.timer-handle:hover {
-  border-color: var(--text-color);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  transform: translateX(-50%) scale(1.1);
-}
-
-/* 시간 표시 */
+/* 시간 표시 - 클릭 가능하게 수정 */
 .time-display {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: rgba(255,255,255,0.9);
-  padding: 4px 8px;
+  background-color: rgba(255,255,255,0.95);
+  padding: 6px 12px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 14px;
   color: var(--text-color);
-  pointer-events: none;
+  cursor: pointer;
   z-index: 15;
+  transition: all var(--transition-fast);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.time-display:hover {
+  background-color: rgba(255,255,255,1);
+  border-color: var(--timer-1-color);
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 /* 타이머 컨트롤 */
