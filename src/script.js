@@ -27,7 +27,18 @@ class MultiTimer {
       timerFills: [],
       timeTexts: [],
       playButtons: [],
-      labelTexts: []
+      labelTexts: [],
+      timerBars: [],
+      // 모달 관련 요소들
+      modal: null,
+      modalClose: null,
+      confirmBtn: null,
+      cancelBtn: null,
+      hoursInput: null,
+      minutesInput: null,
+      secondsInput: null,
+      // 전역 컨트롤 요소들
+      runningCount: null
     };
 
     // RAF ID 추적 (메모리 누수 방지)
@@ -85,6 +96,7 @@ class MultiTimer {
    */
   cacheDOMElements() {
     try {
+      // 타이머 관련 요소들 캐싱
       for (let i = 0; i < CONFIG.TIMERS.COUNT; i++) {
         const timerRow = document.querySelector(`[data-timer-id="${i}"]`);
         if (!timerRow) {
@@ -96,7 +108,21 @@ class MultiTimer {
         this.domElements.timeTexts[i] = timerRow.querySelector('.time-text');
         this.domElements.playButtons[i] = timerRow.querySelector('.play-pause-btn');
         this.domElements.labelTexts[i] = timerRow.querySelector('.label-text');
+        this.domElements.timerBars[i] = timerRow.querySelector('.timer-bar');
       }
+      
+      // 모달 관련 요소들 캐싱
+      this.domElements.modal = document.getElementById('time-input-modal');
+      this.domElements.modalClose = this.domElements.modal.querySelector('.modal-close');
+      this.domElements.confirmBtn = document.getElementById('time-confirm-btn');
+      this.domElements.cancelBtn = document.getElementById('time-cancel-btn');
+      this.domElements.hoursInput = document.getElementById('hours-input');
+      this.domElements.minutesInput = document.getElementById('minutes-input');
+      this.domElements.secondsInput = document.getElementById('seconds-input');
+      
+      // 전역 컨트롤 요소들 캐싱
+      this.domElements.runningCount = document.getElementById('running-count');
+      
     } catch (error) {
       console.error('DOM element caching failed:', error);
       throw error;
@@ -149,86 +175,105 @@ class MultiTimer {
   // 클릭 이벤트 바인딩 (정밀 시간 입력)
   bindClickEvents() {
     document.querySelectorAll('.timer-bar').forEach((bar, index) => {
-      let clickStartTime = 0;
-      let clickStartPos = { x: 0, y: 0 };
-      let hasMovedForClick = false;
-      
-      const handleClickStart = (e) => {
-        // 드래그 상태일 때는 클릭 이벤트 무시
-        if (this.dragState.isDragging) return;
-        
-        clickStartTime = Date.now();
-        const pos = e.touches ? e.touches[0] : e;
-        clickStartPos = { x: pos.clientX, y: pos.clientY };
-        hasMovedForClick = false;
-        
-        CONFIG_UTILS.debugLog(`Click start detected on timer ${index}`);
-      };
-      
-      const handleClickMove = (e) => {
-        if (clickStartTime === 0 || this.dragState.isDragging) return;
-        
-        const pos = e.touches ? e.touches[0] : e;
-        const deltaX = Math.abs(pos.clientX - clickStartPos.x);
-        const deltaY = Math.abs(pos.clientY - clickStartPos.y);
-        
-        // 5px 이상 움직이면 클릭이 아닌 것으로 간주
-        if (deltaX > 5 || deltaY > 5) {
-          hasMovedForClick = true;
-        }
-      };
-      
-      const handleClickEnd = (e) => {
-        if (clickStartTime === 0 || this.dragState.isDragging) return;
-        
-        const endTime = Date.now();
-        const duration = endTime - clickStartTime;
-        
-        CONFIG_UTILS.debugLog(`Click end: duration=${duration}ms, moved=${hasMovedForClick}, dragging=${this.dragState.isDragging}`);
-        
-        // 드래그가 아니고, 짧은 시간 클릭이며, 움직임이 없으면 모달 열기
-        if (!hasMovedForClick && duration < 500 && !this.dragState.isDragging) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          const timer = this.timers[index];
-          if (timer.isCompleted) {
-            this.resetTimer(index);
-          } else {
-            this.openTimeInputModal(index);
-          }
-          CONFIG_UTILS.debugLog(`Opening modal for timer ${index}`);
-        }
-        
-        clickStartTime = 0;
-        hasMovedForClick = false;
-      };
-      
-      // 클릭 이벤트를 별도로 처리
-      bar.addEventListener('click', (e) => {
-        // 드래그 직후의 클릭 이벤트 방지
-        if (this.dragState.isDragging || Date.now() - this.lastDragEndTime < 100) {
-          e.preventDefault();
-          e.stopPropagation();
-          return;
-        }
-        
-        const timer = this.timers[index];
-        if (timer.isCompleted) {
-          this.resetTimer(index);
-        } else {
-          this.openTimeInputModal(index);
-        }
-        CONFIG_UTILS.debugLog(`Direct click on timer ${index}`);
-      });
-      
-      bar.addEventListener('mousedown', handleClickStart);
-      bar.addEventListener('mousemove', handleClickMove);
-      bar.addEventListener('mouseup', handleClickEnd);
-      bar.addEventListener('touchstart', handleClickStart, { passive: false });
-      bar.addEventListener('touchmove', handleClickMove, { passive: false });
-      bar.addEventListener('touchend', handleClickEnd);
+      this.setupClickDetection(bar, index);
+      this.setupDirectClickHandler(bar, index);
     });
+  }
+
+  /**
+   * 클릭 감지 설정 - 드래그와 클릭을 구분하는 이벤트 핸들러
+   * @param {HTMLElement} bar - 타이머 바 요소
+   * @param {number} index - 타이머 인덱스
+   * @private
+   */
+  setupClickDetection(bar, index) {
+    let clickStartTime = 0;
+    let clickStartPos = { x: 0, y: 0 };
+    let hasMovedForClick = false;
+    
+    const handleClickStart = (e) => {
+      if (this.dragState.isDragging) return;
+      
+      clickStartTime = Date.now();
+      const pos = e.touches ? e.touches[0] : e;
+      clickStartPos = { x: pos.clientX, y: pos.clientY };
+      hasMovedForClick = false;
+      
+      CONFIG_UTILS.debugLog(`Click start detected on timer ${index}`);
+    };
+    
+    const handleClickMove = (e) => {
+      if (clickStartTime === 0 || this.dragState.isDragging) return;
+      
+      const pos = e.touches ? e.touches[0] : e;
+      const deltaX = Math.abs(pos.clientX - clickStartPos.x);
+      const deltaY = Math.abs(pos.clientY - clickStartPos.y);
+      
+      if (deltaX > CONFIG.UI.TOUCH.DRAG_THRESHOLD || deltaY > CONFIG.UI.TOUCH.DRAG_THRESHOLD) {
+        hasMovedForClick = true;
+      }
+    };
+    
+    const handleClickEnd = (e) => {
+      if (clickStartTime === 0 || this.dragState.isDragging) return;
+      
+      const endTime = Date.now();
+      const duration = endTime - clickStartTime;
+      
+      CONFIG_UTILS.debugLog(`Click end: duration=${duration}ms, moved=${hasMovedForClick}, dragging=${this.dragState.isDragging}`);
+      
+      if (!hasMovedForClick && duration < CONFIG.UI.INTERACTION.CLICK_DURATION_MAX && !this.dragState.isDragging) {
+        this.handleTimerClick(e, index);
+      }
+      
+      clickStartTime = 0;
+      hasMovedForClick = false;
+    };
+    
+    bar.addEventListener('mousedown', handleClickStart);
+    bar.addEventListener('mousemove', handleClickMove);
+    bar.addEventListener('mouseup', handleClickEnd);
+    bar.addEventListener('touchstart', handleClickStart, { passive: false });
+    bar.addEventListener('touchmove', handleClickMove, { passive: false });
+    bar.addEventListener('touchend', handleClickEnd);
+  }
+
+  /**
+   * 직접 클릭 핸들러 설정
+   * @param {HTMLElement} bar - 타이머 바 요소
+   * @param {number} index - 타이머 인덱스
+   * @private
+   */
+  setupDirectClickHandler(bar, index) {
+    bar.addEventListener('click', (e) => {
+      if (this.dragState.isDragging || Date.now() - this.lastDragEndTime < CONFIG.UI.INTERACTION.DRAG_END_DELAY) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      
+      this.handleTimerClick(e, index);
+      CONFIG_UTILS.debugLog(`Direct click on timer ${index}`);
+    });
+  }
+
+  /**
+   * 타이머 클릭 처리 - 완료된 타이머는 리셋, 그 외는 모달 열기
+   * @param {Event} e - 클릭 이벤트
+   * @param {number} index - 타이머 인덱스
+   * @private
+   */
+  handleTimerClick(e, index) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const timer = this.timers[index];
+    if (timer.isCompleted) {
+      this.resetTimer(index);
+    } else {
+      this.openTimeInputModal(index);
+    }
+    CONFIG_UTILS.debugLog(`Processing click for timer ${index}`);
   }
 
   // 개별 타이머 컨트롤 바인딩
@@ -313,10 +358,10 @@ class MultiTimer {
 
   // 모달 이벤트 바인딩
   bindModalEvents() {
-    const modal = document.getElementById('time-input-modal');
-    const closeBtn = modal.querySelector('.modal-close');
-    const confirmBtn = document.getElementById('time-confirm-btn');
-    const cancelBtn = document.getElementById('time-cancel-btn');
+    const modal = this.domElements.modal;
+    const closeBtn = this.domElements.modalClose;
+    const confirmBtn = this.domElements.confirmBtn;
+    const cancelBtn = this.domElements.cancelBtn;
     
     closeBtn.addEventListener('click', () => this.closeTimeInputModal());
     cancelBtn.addEventListener('click', () => this.closeTimeInputModal());
@@ -383,7 +428,7 @@ class MultiTimer {
     e.preventDefault();
     
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const timerBar = document.querySelector(`[data-timer-id="${this.dragState.timerId}"] .timer-bar`);
+    const timerBar = this.domElements.timerBars[this.dragState.timerId];
     const rect = timerBar.getBoundingClientRect();
     
     // 세로 드래그: 위로 드래그하면 시간 증가 (deltaY가 음수)
@@ -410,7 +455,7 @@ class MultiTimer {
     if (!this.dragState.isDragging) return;
     
     const timerId = this.dragState.timerId;
-    const timerBar = document.querySelector(`[data-timer-id="${timerId}"] .timer-bar`);
+    const timerBar = this.domElements.timerBars[timerId];
     timerBar.classList.remove('dragging');
     document.body.style.cursor = 'default';
     
@@ -441,24 +486,24 @@ class MultiTimer {
     const minutes = Math.floor((timer.totalTime % 3600) / 60);
     const seconds = timer.totalTime % 60;
     
-    document.getElementById('hours-input').value = hours;
-    document.getElementById('minutes-input').value = minutes;
-    document.getElementById('seconds-input').value = seconds;
+    this.domElements.hoursInput.value = hours;
+    this.domElements.minutesInput.value = minutes;
+    this.domElements.secondsInput.value = seconds;
     
-    document.getElementById('time-input-modal').style.display = 'block';
+    this.domElements.modal.style.display = 'block';
   }
 
   // 시간 입력 모달 닫기
   closeTimeInputModal() {
-    document.getElementById('time-input-modal').style.display = 'none';
+    this.domElements.modal.style.display = 'none';
     this.currentEditingTimer = null;
   }
 
   // 시간 입력 확인
   confirmTimeInput() {
-    const hours = parseInt(document.getElementById('hours-input').value) || 0;
-    const minutes = parseInt(document.getElementById('minutes-input').value) || 0;
-    const seconds = parseInt(document.getElementById('seconds-input').value) || 0;
+    const hours = Math.min(parseInt(this.domElements.hoursInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_HOURS);
+    const minutes = Math.min(parseInt(this.domElements.minutesInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_MINUTES);
+    const seconds = Math.min(parseInt(this.domElements.secondsInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_SECONDS);
     
     const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
     
@@ -686,14 +731,12 @@ class MultiTimer {
 
   // 깜빡임 효과 시작
   startBlinkEffect(timerId) {
-    const timerRow = document.querySelector(`[data-timer-id="${timerId}"]`);
-    timerRow.classList.add('completed');
+    this.domElements.timerRows[timerId].classList.add('completed');
   }
 
   // 깜빡임 효과 중지
   stopBlinkEffect(timerId) {
-    const timerRow = document.querySelector(`[data-timer-id="${timerId}"]`);
-    timerRow.classList.remove('completed');
+    this.domElements.timerRows[timerId].classList.remove('completed');
   }
 
   // 알람 소리 재생
@@ -926,8 +969,7 @@ class MultiTimer {
 
   updateRunningCount() {
     const runningCount = this.timers.filter(timer => timer.isRunning).length;
-    const countElement = document.getElementById('running-count');
-    countElement.textContent = `${runningCount}/${CONFIG.TIMERS.COUNT} 실행 중`;
+    this.domElements.runningCount.textContent = `${runningCount}/${CONFIG.TIMERS.COUNT} 실행 중`;
   }
 
   /**

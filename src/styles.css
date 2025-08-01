@@ -678,12 +678,21 @@ input:checked + .slider:before {
   }
 }
 
-/* 접근성 */
+/* 접근성 개선 */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  :root {
+    --border-color: #000000;
+    --text-light: #000000;
+    --shadow: none;
   }
 }
 

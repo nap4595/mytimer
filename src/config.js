@@ -63,6 +63,19 @@ const CONFIG = {
     TOUCH: {
       MIN_TOUCH_SIZE: 44, // 44px 최소 터치 영역
       DRAG_THRESHOLD: 5 // 5px 드래그 감지 임계값
+    },
+    INTERACTION: {
+      CLICK_DURATION_MAX: 500, // 클릭으로 인정할 최대 시간 (ms)
+      DRAG_END_DELAY: 100, // 드래그 종료 후 클릭 방지 시간 (ms)
+      MODAL_CLOSE_DELAY: 300, // 모달 닫기 애니메이션 시간 (ms)
+      BUTTON_SCALE_ACTIVE: 0.95, // 버튼 클릭 시 스케일
+      BUTTON_SCALE_HOVER: 1.05 // 버튼 호버 시 스케일
+    },
+    VALIDATION: {
+      LABEL_MAX_LENGTH: 10, // 라벨 최대 길이
+      TIME_INPUT_MAX_HOURS: 23, // 시간 입력 최대값
+      TIME_INPUT_MAX_MINUTES: 59, // 분 입력 최대값
+      TIME_INPUT_MAX_SECONDS: 59 // 초 입력 최대값
     }
   },
 
