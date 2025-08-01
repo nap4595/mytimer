@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiTimer - 다중 타이머</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 왼쪽 컨트롤 패널 (15%) -->
+        <div class="left-panel">
+            <div class="panel-section">
+                <h3>전체 제어</h3>
+                <button id="start-all-btn" class="control-btn start-btn">전체 시작</button>
+                <button id="stop-all-btn" class="control-btn stop-btn">전체 정지</button>
+                <button id="reset-all-btn" class="control-btn reset-btn">전체 리셋</button>
+                <div class="running-count">
+                    <span id="running-count">0/5 실행 중</span>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>시간 표시</h3>
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="display-mode-toggle">
+                        <span class="slider"></span>
+                        <span class="toggle-label">남은 시간 / 경과 시간</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>최대 시간 설정</h3>
+                <select id="max-time-select" class="max-time-selector">
+                    <option value="600">10분</option>
+                    <option value="900">15분</option>
+                    <option value="1800" selected>30분</option>
+                    <option value="2700">45분</option>
+                    <option value="3600">60분</option>
+                </select>
+            </div>
+
+            <div class="panel-section">
+                <h3>타이머 라벨</h3>
+                <div class="label-inputs">
+                    <input type="text" id="label-0" class="label-input" placeholder="타이머 1" maxlength="10">
+                    <input type="text" id="label-1" class="label-input" placeholder="타이머 2" maxlength="10">
+                    <input type="text" id="label-2" class="label-input" placeholder="타이머 3" maxlength="10">
+                    <input type="text" id="label-3" class="label-input" placeholder="타이머 4" maxlength="10">
+                    <input type="text" id="label-4" class="label-input" placeholder="타이머 5" maxlength="10">
+                </div>
+            </div>
+        </div>
+
+        <!-- 중앙 타이머 영역 (70%) -->
+        <div class="timer-area">
+            <div class="timer-container">
+                <!-- 타이머 1 -->
+                <div class="timer-row" data-timer-id="0">
+                    <div class="timer-label">
+                        <span class="label-text">타이머 1</span>
+                    </div>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar" data-color="#FF6B6B">
+                            <div class="timer-fill"></div>
+                            <div class="timer-handle"></div>
+                        </div>
+                        <div class="time-display">
+                            <span class="time-text">00:00</span>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="play-pause-btn" data-timer-id="0">
+                            <span class="btn-icon">▶</span>
+                        </button>
+                        <button class="reset-btn" data-timer-id="0">
+                            <span class="btn-icon">✖</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 타이머 2 -->
+                <div class="timer-row" data-timer-id="1">
+                    <div class="timer-label">
+                        <span class="label-text">타이머 2</span>
+                    </div>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar" data-color="#4ECDC4">
+                            <div class="timer-fill"></div>
+                            <div class="timer-handle"></div>
+                        </div>
+                        <div class="time-display">
+                            <span class="time-text">00:00</span>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="play-pause-btn" data-timer-id="1">
+                            <span class="btn-icon">▶</span>
+                        </button>
+                        <button class="reset-btn" data-timer-id="1">
+                            <span class="btn-icon">✖</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 타이머 3 -->
+                <div class="timer-row" data-timer-id="2">
+                    <div class="timer-label">
+                        <span class="label-text">타이머 3</span>
+                    </div>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar" data-color="#45B7D1">
+                            <div class="timer-fill"></div>
+                            <div class="timer-handle"></div>
+                        </div>
+                        <div class="time-display">
+                            <span class="time-text">00:00</span>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="play-pause-btn" data-timer-id="2">
+                            <span class="btn-icon">▶</span>
+                        </button>
+                        <button class="reset-btn" data-timer-id="2">
+                            <span class="btn-icon">✖</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 타이머 4 -->
+                <div class="timer-row" data-timer-id="3">
+                    <div class="timer-label">
+                        <span class="label-text">타이머 4</span>
+                    </div>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar" data-color="#FFA726">
+                            <div class="timer-fill"></div>
+                            <div class="timer-handle"></div>
+                        </div>
+                        <div class="time-display">
+                            <span class="time-text">00:00</span>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="play-pause-btn" data-timer-id="3">
+                            <span class="btn-icon">▶</span>
+                        </button>
+                        <button class="reset-btn" data-timer-id="3">
+                            <span class="btn-icon">✖</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 타이머 5 -->
+                <div class="timer-row" data-timer-id="4">
+                    <div class="timer-label">
+                        <span class="label-text">타이머 5</span>
+                    </div>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar" data-color="#AB47BC">
+                            <div class="timer-fill"></div>
+                            <div class="timer-handle"></div>
+                        </div>
+                        <div class="time-display">
+                            <span class="time-text">00:00</span>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="play-pause-btn" data-timer-id="4">
+                            <span class="btn-icon">▶</span>
+                        </button>
+                        <button class="reset-btn" data-timer-id="4">
+                            <span class="btn-icon">✖</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽 컨트롤 패널 (15%) -->
+        <div class="right-panel">
+            <div class="panel-section">
+                <h3>화면 설정</h3>
+                <button id="fullscreen-btn" class="control-btn">
+                    <span class="btn-icon">⛶</span>
+                    <span class="btn-text">풀스크린</span>
+                </button>
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="rotation-lock-toggle">
+                        <span class="slider"></span>
+                        <span class="toggle-label">회전 방지</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>도움말</h3>
+                <div class="help-text">
+                    <p>• 막대를 드래그하여 시간 설정</p>
+                    <p>• 막대를 클릭하여 정확한 시간 입력</p>
+                    <p>• 각 타이머 독립적으로 동작</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 시간 입력 모달 -->
+    <div id="time-input-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>정확한 시간 설정</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="time-input-group">
+                    <label>시간:</label>
+                    <input type="number" id="hours-input" min="0" max="23" value="0">
+                </div>
+                <div class="time-input-group">
+                    <label>분:</label>
+                    <input type="number" id="minutes-input" min="0" max="59" value="0">
+                </div>
+                <div class="time-input-group">
+                    <label>초:</label>
+                    <input type="number" id="seconds-input" min="0" max="59" value="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="time-confirm-btn" class="control-btn start-btn">확인</button>
+                <button id="time-cancel-btn" class="control-btn">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

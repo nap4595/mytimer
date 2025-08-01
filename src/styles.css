@@ -1,0 +1,706 @@
+/* CONFIG를 위한 CSS 커스텀 속성 (CSS Variables) */
+:root {
+  /* 타이머 색상 */
+  --timer-1-color: #FF6B6B;
+  --timer-2-color: #4ECDC4;
+  --timer-3-color: #45B7D1;
+  --timer-4-color: #FFA726;
+  --timer-5-color: #AB47BC;
+  
+  /* 기본 색상 */
+  --bg-color: #F8F9FA;
+  --panel-bg: #FFFFFF;
+  --text-color: #212529;
+  --text-light: #6C757D;
+  --border-color: #DEE2E6;
+  --shadow: 0 2px 4px rgba(0,0,0,0.1);
+  
+  /* 레이아웃 */
+  --left-panel-width: 15%;
+  --timer-area-width: 70%;
+  --right-panel-width: 15%;
+  
+  /* 애니메이션 */
+  --transition-fast: 0.15s ease;
+  --transition-smooth: 0.3s ease;
+  --blink-duration: 1s;
+}
+
+/* 기본 리셋 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  overflow: hidden; /* 스크롤 방지 */
+  user-select: none; /* 텍스트 선택 방지 */
+}
+
+/* 메인 앱 컨테이너 */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* 왼쪽 패널 */
+.left-panel {
+  width: var(--left-panel-width);
+  background-color: var(--panel-bg);
+  border-right: 1px solid var(--border-color);
+  padding: 20px 15px;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+/* 오른쪽 패널 */
+.right-panel {
+  width: var(--right-panel-width);
+  background-color: var(--panel-bg);
+  border-left: 1px solid var(--border-color);
+  padding: 20px 15px;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+/* 패널 섹션 */
+.panel-section {
+  margin-bottom: 25px;
+}
+
+.panel-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-color);
+  text-align: center;
+}
+
+/* 중앙 타이머 영역 */
+.timer-area {
+  width: var(--timer-area-width);
+  background-color: var(--bg-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.timer-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row; /* 세로 막대들을 가로로 배치 */
+  gap: 8px;
+  padding: 10px;
+}
+
+/* 타이머 행 */
+.timer-row {
+  display: flex;
+  flex-direction: column;
+  width: calc(20% - 8px); /* 5개 열, gap 고려 */
+  height: 100%; /* 전체 높이 사용 */
+  background-color: var(--panel-bg);
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: var(--shadow);
+  transition: all var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.timer-row:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* 타이머 라벨 */
+.timer-label {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  pointer-events: none;
+  text-align: center;
+  width: 90%;
+}
+
+.label-text {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-color);
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 타이머 바 컨테이너 */
+.timer-bar-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* 타이머 바 */
+.timer-bar {
+  width: 100%;
+  height: 100%;
+  background-color: #E9ECEF;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.timer-bar:hover {
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+}
+
+/* 타이머 채우기 */
+.timer-fill {
+  width: 100%;
+  height: 0%;
+  border-radius: 0 0 12px 12px;
+  transition: height var(--transition-smooth);
+  position: relative;
+  align-self: flex-end;
+}
+
+/* 각 타이머별 색상 설정 */
+.timer-row[data-timer-id="0"] .timer-fill {
+  background-color: var(--timer-1-color);
+}
+.timer-row[data-timer-id="1"] .timer-fill {
+  background-color: var(--timer-2-color);
+}
+.timer-row[data-timer-id="2"] .timer-fill {
+  background-color: var(--timer-3-color);
+}
+.timer-row[data-timer-id="3"] .timer-fill {
+  background-color: var(--timer-4-color);
+}
+.timer-row[data-timer-id="4"] .timer-fill {
+  background-color: var(--timer-5-color);
+}
+
+/* 타이머 핸들 (드래그용) */
+.timer-handle {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 12px;
+  background-color: #FFFFFF;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  cursor: ns-resize;
+  opacity: 1;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.timer-bar:hover .timer-handle {
+  opacity: 1;
+  border-color: var(--text-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.timer-handle:hover {
+  border-color: var(--text-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  transform: translateX(-50%) scale(1.1);
+}
+
+/* 시간 표시 */
+.time-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255,255,255,0.9);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-color);
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* 타이머 컨트롤 */
+.timer-controls {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+}
+
+.play-pause-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background-color: #28A745;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow);
+}
+
+.play-pause-btn:hover {
+  background-color: #218838;
+  transform: scale(1.05);
+}
+
+.play-pause-btn:active {
+  transform: scale(0.95);
+}
+
+.play-pause-btn.paused {
+  background-color: #FFC107;
+}
+
+.play-pause-btn.paused:hover {
+  background-color: #E0A800;
+}
+
+.play-pause-btn.completed {
+  background-color: #DC3545;
+}
+
+.play-pause-btn.completed:hover {
+  background-color: #C82333;
+}
+
+/* 리셋 버튼 (X 버튼) */
+.timer-controls .reset-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background-color: #6C757D;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow);
+}
+
+.timer-controls .reset-btn:hover {
+  background-color: #DC3545;
+  transform: scale(1.05);
+}
+
+.timer-controls .reset-btn:active {
+  transform: scale(0.95);
+}
+
+/* 컨트롤 버튼 */
+.control-btn {
+  width: 100%;
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  border: none;
+  border-radius: 8px;
+  background-color: #6C757D;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.control-btn:hover {
+  background-color: #5A6268;
+  transform: translateY(-1px);
+}
+
+.control-btn:active {
+  transform: translateY(0);
+}
+
+.start-btn {
+  background-color: #28A745;
+}
+
+.start-btn:hover {
+  background-color: #218838;
+}
+
+.stop-btn {
+  background-color: #DC3545;
+}
+
+.stop-btn:hover {
+  background-color: #C82333;
+}
+
+.reset-btn {
+  background-color: #6C757D;
+}
+
+.reset-btn:hover {
+  background-color: #5A6268;
+}
+
+/* 실행 중인 타이머 카운트 */
+.running-count {
+  text-align: center;
+  padding: 8px;
+  background-color: var(--bg-color);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 10px;
+}
+
+/* 토글 스위치 */
+.toggle-container {
+  margin-bottom: 15px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  background-color: #CCC;
+  transition: var(--transition-smooth);
+  border-radius: 20px;
+  height: 24px;
+  margin-bottom: 8px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: var(--transition-smooth);
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #28A745;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.toggle-label {
+  font-size: 12px;
+  color: var(--text-light);
+  line-height: 1.3;
+}
+
+/* 최대 시간 선택기 */
+.max-time-selector {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: white;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* 라벨 입력 */
+.label-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  transition: border-color var(--transition-fast);
+}
+
+.label-input:focus {
+  outline: none;
+  border-color: #007BFF;
+}
+
+/* 도움말 텍스트 */
+.help-text {
+  font-size: 11px;
+  color: var(--text-light);
+  line-height: 1.4;
+}
+
+.help-text p {
+  margin-bottom: 4px;
+}
+
+/* 모달 */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background-color: var(--panel-bg);
+  margin: 10% auto;
+  padding: 0;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+  animation: slideIn 0.3s ease;
+}
+
+.modal-header {
+  padding: 20px 20px 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-light);
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: var(--text-color);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.time-input-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.time-input-group label {
+  width: 60px;
+  font-weight: 500;
+}
+
+.time-input-group input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.modal-footer {
+  padding: 0 20px 20px 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.modal-footer .control-btn {
+  width: auto;
+  padding: 10px 20px;
+  margin-bottom: 0;
+}
+
+/* 애니메이션 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+/* 완료 상태 깜빡임 효과 */
+.timer-row.completed {
+  animation: blink var(--blink-duration) infinite;
+}
+
+/* X 버튼은 깜빡이지 않도록 설정 */
+.timer-row.completed .reset-btn {
+  animation: none;
+}
+
+.timer-row.completed .timer-fill {
+  background: linear-gradient(45deg, currentColor, rgba(255,255,255,0.3));
+}
+
+/* 실행 중 상태 */
+.timer-row.running .timer-fill {
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+  .left-panel, .right-panel {
+    width: 18%;
+  }
+  
+  .timer-area {
+    width: 64%;
+  }
+  
+  .panel-section h3 {
+    font-size: 12px;
+  }
+  
+  .control-btn {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+  
+  .label-input {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
+  .left-panel, .right-panel {
+    width: 100%;
+    height: 15%;
+    padding: 10px;
+  }
+  
+  .timer-area {
+    width: 100%;
+    height: 70%;
+  }
+  
+  .timer-container {
+    flex-direction: row; /* 모바일에서도 세로 막대 유지 */
+    gap: 4px;
+    padding: 5px;
+  }
+  
+  .timer-row {
+    width: calc(20% - 4px); /* 5개 세로 막대 */
+    height: 100%;
+  }
+  
+  .label-text {
+    font-size: 10px;
+  }
+  
+  .play-pause-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .timer-controls .reset-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+  
+  .time-display {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+}
+
+/* 접근성 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 포커스 표시 */
+button:focus,
+input:focus,
+select:focus {
+  outline: 2px solid #007BFF;
+  outline-offset: 2px;
+}
+
+/* 드래그 중 상태 */
+.timer-bar.dragging {
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.3);
+}
+
+.timer-bar.dragging .timer-handle {
+  opacity: 1;
+  border-color: #007BFF;
+}
