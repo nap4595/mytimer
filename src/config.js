@@ -1,12 +1,43 @@
-// MultiTimer 앱 설정 파일 - CONFIG 패턴 적용
+/**
+ * MultiTimer 애플리케이션 설정 파일
+ * 
+ * @fileoverview 중앙화된 설정 관리 시스템
+ * @version 1.2.1
+ * @author MultiTimer Team
+ * @since 2024-01-01
+ * 
+ * @description
+ * 이 파일은 MultiTimer 애플리케이션의 모든 설정값을 관리합니다.
+ * CONFIG 객체는 불변(frozen)으로 설정되어 실수로 수정되는 것을 방지합니다.
+ * 
+ * 주요 설정 영역:
+ * - TIMERS: 타이머 기본 설정 및 프리셋
+ * - COLORS: 색상 팔레트 및 테마
+ * - UI: 레이아웃, 애니메이션, 인터랙션
+ * - PERFORMANCE: 성능 최적화 설정
+ * - FEATURES: 기능 토글 스위치
+ * 
+ * @example
+ * // 설정값 사용
+ * const maxTime = CONFIG.TIMERS.DEFAULT_MAX_TIME;
+ * const timerColor = CONFIG_UTILS.getTimerColor(0);
+ * 
+ * @example
+ * // 브라우저 지원 확인
+ * const support = CONFIG_UTILS.checkBrowserSupport();
+ * if (support.fullscreen) {
+ *   // 풀스크린 기능 활성화
+ * }
+ */
 
 const CONFIG = {
   // 타이머 기본 설정
   TIMERS: {
     COUNT: 5,                    // 기본 타이머 개수
-    MIN_COUNT: 1,                // 최소 타이머 개수  
-    MAX_COUNT: 100,              // 최대 타이머 개수
-    TIMERS_PER_ROW: 10,          // 한 줄당 타이머 개수
+    PRESET_COUNTS: [5, 10, 15],  // 사용 가능한 프리셋 개수
+    MIN_COUNT: 5,                // 최소 타이머 개수  
+    MAX_COUNT: 15,               // 최대 타이머 개수
+    TIMERS_PER_ROW: 5,           // 한 줄당 타이머 개수 (고정)
     MIN_TIME: 60,                // 1분 (초)
     DEFAULT_MAX_TIME: 1800,      // 30분 (초)
     MAX_TIME_OPTIONS: [
@@ -22,7 +53,13 @@ const CONFIG = {
       '3',
       '4',
       '5'
-    ]
+    ],
+    // 프리셋별 레이아웃 설정
+    LAYOUT_PRESETS: {
+      5: { rows: 1, columns: 5, description: '5개 (1행)' },
+      10: { rows: 2, columns: 5, description: '10개 (2행)' },
+      15: { rows: 3, columns: 5, description: '15개 (3행)' }
+    }
   },
 
   // 색상 설정
@@ -136,7 +173,17 @@ const CONFIG = {
   PERFORMANCE: {
     UPDATE_INTERVAL: 100, // 100ms마다 UI 업데이트
     TIMER_PRECISION: 1000, // 1초 정밀도
-    DEBOUNCE_DELAY: 300 // 300ms 디바운스
+    DEBOUNCE_DELAY: 300, // 300ms 디바운스
+    AUTO_SAVE_INTERVAL: 30000 // 30초마다 자동 저장
+  },
+
+  // UI 상수
+  UI_CONSTANTS: {
+    PERCENTAGE_MAX: 100,
+    SNAP_UNIT_SECONDS: 10, // 드래그 시 10초 단위 스냅
+    LABEL_MAX_LENGTH: 10,
+    NOTIFICATION_DURATION: 3000, // 알림 표시 시간 (ms)
+    ANIMATION_DELAY: 300 // 기본 애니메이션 지연 시간
   },
 
   // 에러 메시지
@@ -179,6 +226,7 @@ Object.freeze(CONFIG.DRAG);
 Object.freeze(CONFIG.NOTIFICATIONS);
 Object.freeze(CONFIG.STORAGE_KEYS);
 Object.freeze(CONFIG.PERFORMANCE);
+Object.freeze(CONFIG.UI_CONSTANTS);
 Object.freeze(CONFIG.MESSAGES);
 Object.freeze(CONFIG.DEBUG);
 

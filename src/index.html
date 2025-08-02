@@ -7,14 +7,17 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="app-container">
+    <!-- 주요 콘텐츠로 바로 이동 -->
+    <a href="#timer-container" class="sr-only">메인 콘텐츠로 바로 가기</a>
+    
+    <div class="app-container" role="application" aria-label="MultiTimer - 다중 타이머 애플리케이션">
         <!-- 왼쪽 컨트롤 패널 (15%) -->
-        <div class="left-panel">
+        <aside class="left-panel" role="complementary" aria-label="타이머 전체 컨트롤">
             <div class="panel-section">
                 <h3>전체 제어</h3>
-                <button id="start-all-btn" class="control-btn start-btn">전체 시작</button>
-                <button id="stop-all-btn" class="control-btn stop-btn">전체 정지</button>
-                <button id="reset-all-btn" class="control-btn reset-btn">전체 리셋</button>
+                <button id="start-all-btn" class="control-btn start-btn" aria-label="모든 타이머 시작">전체 시작</button>
+                <button id="stop-all-btn" class="control-btn stop-btn" aria-label="모든 타이머 정지">전체 정지</button>
+                <button id="reset-all-btn" class="control-btn reset-btn" aria-label="모든 타이머 리셋">전체 리셋</button>
                 <div class="running-count">
                     <span id="running-count">0/5 실행 중</span>
                 </div>
@@ -22,15 +25,19 @@
 
             <div class="panel-section">
                 <h3>타이머 개수</h3>
-                <input type="number" id="timer-count-input" class="timer-count-input" 
-                       min="1" max="100" value="5" step="1">
-                <button id="apply-timer-count" class="control-btn">적용</button>
+                <label for="timer-count-select" class="sr-only">타이머 개수 선택</label>
+                <select id="timer-count-select" class="timer-count-selector" aria-label="타이머 개수 선택">
+                    <option value="5" selected>5개 (1행)</option>
+                    <option value="10">10개 (2행)</option>
+                    <option value="15">15개 (3행)</option>
+                </select>
             </div>
 
 
             <div class="panel-section">
                 <h3>최대 시간 설정</h3>
-                <select id="max-time-select" class="max-time-selector">
+                <label for="max-time-select" class="sr-only">최대 시간 선택</label>
+                <select id="max-time-select" class="max-time-selector" aria-label="최대 시간 선택">
                     <option value="600">10분</option>
                     <option value="900">15분</option>
                     <option value="1800" selected>30분</option>
@@ -41,82 +48,83 @@
 
             <div class="panel-section">
                 <h3>타이머 라벨</h3>
-                <button id="manage-labels-btn" class="control-btn">라벨 관리</button>
+                <button id="manage-labels-btn" class="control-btn" aria-label="타이머 라벨 관리">라벨 관리</button>
                 <div class="label-inputs" id="label-inputs-container">
                     <!-- 동적으로 생성됨 -->
                 </div>
             </div>
-        </div>
+        </aside>
 
         <!-- 중앙 타이머 영역 (70%) -->
-        <div class="timer-area">
-            <div class="timer-container" id="timer-container">
+        <main class="timer-area" role="main" aria-label="타이머 메인 영역">
+            <div class="timer-container" id="timer-container" role="group" aria-label="타이머 목록">
                 <!-- 동적으로 생성됨 -->
             </div>
-        </div>
+        </main>
 
         <!-- 오른쪽 컨트롤 패널 (15%) -->
-        <div class="right-panel">
+        <aside class="right-panel" role="complementary" aria-label="화면 설정 및 도움말">
             <div class="panel-section">
                 <h3>화면 설정</h3>
-                <button id="fullscreen-btn" class="control-btn">
-                    <span class="btn-icon">⛶</span>
+                <button id="fullscreen-btn" class="control-btn" aria-label="풀스크린 모드 토글">
+                    <span class="btn-icon" aria-hidden="true">⛶</span>
                     <span class="btn-text">풀스크린</span>
                 </button>
                 <div class="auto-start-setting">
-                    <label class="auto-start-label">
-                        <input type="checkbox" id="auto-start-toggle" checked>
-                        <span class="checkmark"></span>
+                    <label class="auto-start-label" for="auto-start-toggle">
+                        <input type="checkbox" id="auto-start-toggle" checked aria-describedby="auto-start-desc">
+                        <span class="checkmark" aria-hidden="true"></span>
                         자동 시작
                     </label>
+                    <div id="auto-start-desc" class="sr-only">시간 설정 시 자동으로 타이머 시작</div>
                 </div>
-                <button id="sound-select-btn" class="control-btn">
-                    <span class="btn-icon">🔊</span>
+                <button id="sound-select-btn" class="control-btn" aria-label="종료음 선택">
+                    <span class="btn-icon" aria-hidden="true">🔊</span>
                     <span class="btn-text">종료음</span>
                 </button>
             </div>
 
             <div class="panel-section">
                 <h3>도움말</h3>
-                <div class="help-text">
+                <div class="help-text" role="region" aria-label="사용법 안내">
                     <p>• 시간 표시를 클릭하여 정확한 시간 입력</p>
                     <p>• 막대를 드래그하여 시간 설정</p>
                     <p>• 자동 시작을 체크하면 시간 설정 시 바로 실행</p>
                 </div>
             </div>
-        </div>
+        </aside>
     </div>
 
     <!-- 시간 입력 모달 -->
-    <div id="time-input-modal" class="modal">
+    <div id="time-input-modal" class="modal" role="dialog" aria-labelledby="time-modal-title" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>시간 설정</h3>
-                <button class="modal-close">&times;</button>
+                <h3 id="time-modal-title">시간 설정</h3>
+                <button class="modal-close" aria-label="모달 닫기">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="time-input-group">
-                    <label>분:</label>
-                    <input type="number" id="minutes-input" min="0" max="59" value="0">
+                    <label for="minutes-input">분:</label>
+                    <input type="number" id="minutes-input" min="0" max="59" value="0" aria-label="분 입력">
                 </div>
                 <div class="time-input-group">
-                    <label>초:</label>
-                    <input type="number" id="seconds-input" min="0" max="59" value="0">
+                    <label for="seconds-input">초:</label>
+                    <input type="number" id="seconds-input" min="0" max="59" value="0" aria-label="초 입력">
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="time-confirm-btn" class="control-btn start-btn">확인</button>
-                <button id="time-cancel-btn" class="control-btn">취소</button>
+                <button id="time-confirm-btn" class="control-btn start-btn" aria-label="시간 설정 확인">확인</button>
+                <button id="time-cancel-btn" class="control-btn" aria-label="시간 설정 취소">취소</button>
             </div>
         </div>
     </div>
 
     <!-- 종료음 선택 모달 -->
-    <div id="sound-select-modal" class="modal">
+    <div id="sound-select-modal" class="modal" role="dialog" aria-labelledby="sound-modal-title" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>종료음 선택</h3>
-                <button class="modal-close">&times;</button>
+                <h3 id="sound-modal-title">종료음 선택</h3>
+                <button class="modal-close" aria-label="모달 닫기">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="sound-option-group">
@@ -156,8 +164,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="sound-confirm-btn" class="control-btn start-btn">확인</button>
-                <button id="sound-cancel-btn" class="control-btn">취소</button>
+                <button id="sound-confirm-btn" class="control-btn start-btn" aria-label="종료음 선택 확인">확인</button>
+                <button id="sound-cancel-btn" class="control-btn" aria-label="종료음 선택 취소">취소</button>
             </div>
         </div>
     </div>

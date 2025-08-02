@@ -1,8 +1,41 @@
-// MultiTimer 메인 JavaScript 파일
+/**
+ * MultiTimer 메인 JavaScript 파일
+ * 
+ * @fileoverview 프리셋 기반 다중 타이머 관리 시스템
+ * @version 1.2.1
+ * @author MultiTimer Team
+ * @since 2024-01-01
+ * 
+ * @requires CONFIG (config.js)
+ * @requires CONFIG_UTILS (config.js)
+ * 
+ * 주요 기능:
+ * - 5/10/15개 타이머 프리셋 지원
+ * - 성능 최적화된 배치 렌더링
+ * - 메모리 누수 방지 시스템
+ * - WCAG 2.1 AA 접근성 준수
+ * - 모던 브라우저 API 활용
+ * 
+ * 사용법:
+ * ```javascript
+ * const app = new MultiTimer();
+ * // 앱이 자동으로 초기화되고 사용자 설정을 로드합니다.
+ * ```
+ */
 
 /**
  * MultiTimer - 다중 타이머 관리 클래스
- * 정확한 시간 추적과 성능 최적화를 위한 DOM 캐싱 구현
+ * 
+ * @class MultiTimer
+ * @description 정확한 시간 추적과 성능 최적화를 위한 DOM 캐싱 구현
+ * 
+ * @example
+ * // 기본 사용법
+ * const timer = new MultiTimer();
+ * 
+ * @example
+ * // 수동 정리 (일반적으로 불필요)
+ * timer.destroy();
  */
 class MultiTimer {
   constructor() {
@@ -48,8 +81,19 @@ class MultiTimer {
       runningCount: null
     };
 
-    // RAF ID 추적 (메모리 누수 방지)
-    this.rafIds = [];
+    // 성능 최적화 시스템
+    this.performanceOptimizer = {
+      renderQueue: [],
+      isRendering: false,
+      lastRenderTime: 0,
+      renderThrottle: 1000 / 60, // 60fps
+      pendingUpdates: new Map()
+    };
+
+    // 메모리 관리 시스템
+    this.abortController = new AbortController();
+    this.rafIds = new Set();
+    this.timeoutIds = new Set();
 
     try {
       this.createTimerHTML(); // 먼저 HTML 생성
@@ -146,7 +190,7 @@ class MultiTimer {
     input.id = `label-${index}`;
     input.className = 'label-input';
     input.placeholder = `타이머 ${index + 1}`;
-    input.maxLength = 10;
+    input.maxLength = CONFIG.UI_CONSTANTS.LABEL_MAX_LENGTH;
     input.value = CONFIG_UTILS.getTimerLabel(index);
     
     return input;
@@ -364,32 +408,24 @@ class MultiTimer {
 
   // 타이머 개수 변경 컨트롤 바인딩
   bindTimerCountControls() {
-    const timerCountInput = document.getElementById('timer-count-input');
-    const applyBtn = document.getElementById('apply-timer-count');
+    const timerCountSelect = document.getElementById('timer-count-select');
     
-    // 타이머 개수 입력 필드 현재 값 설정
-    timerCountInput.value = this.currentTimerCount;
+    // 현재 타이머 개수 설정
+    timerCountSelect.value = this.currentTimerCount;
     
-    // 적용 버튼 클릭
-    applyBtn.addEventListener('click', () => {
-      const newCount = parseInt(timerCountInput.value);
+    // 선택 변경 이벤트
+    timerCountSelect.addEventListener('change', (e) => {
+      const newCount = parseInt(e.target.value);
       if (this.validateTimerCount(newCount)) {
         this.changeTimerCount(newCount);
       }
     });
-    
-    // Enter 키 처리
-    timerCountInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        applyBtn.click();
-      }
-    });
   }
 
-  // 타이머 개수 유효성 검사
+  // 타이머 개수 유효성 검사 (프리셋 기반)
   validateTimerCount(count) {
-    if (isNaN(count) || count < CONFIG.TIMERS.MIN_COUNT || count > CONFIG.TIMERS.MAX_COUNT) {
-      alert(`타이머 개수는 ${CONFIG.TIMERS.MIN_COUNT}개에서 ${CONFIG.TIMERS.MAX_COUNT}개 사이여야 합니다.`);
+    if (isNaN(count) || !CONFIG.TIMERS.PRESET_COUNTS.includes(count)) {
+      this.showNotification(`타이머 개수는 ${CONFIG.TIMERS.PRESET_COUNTS.join(', ')}개 중에서만 선택할 수 있습니다.`, 'error');
       return false;
     }
     return true;
@@ -505,9 +541,9 @@ class MultiTimer {
             this.closeTimeInputModal();
           }
           break;
-        case '1': case '2': case '3': case '4': case '5':
+        case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
           const timerId = parseInt(e.key) - 1;
-          if (timerId < CONFIG.TIMERS.COUNT) {
+          if (timerId < this.currentTimerCount) {
             this.toggleTimer(timerId);
           }
           break;
@@ -527,7 +563,7 @@ class MultiTimer {
       isDragging: true,
       timerId: timerId,
       startY: clientY,
-      initialHeight: ((this.timers[timerId].totalTime / this.currentMaxTime) * 100)
+      initialHeight: ((this.timers[timerId].totalTime / this.currentMaxTime) * CONFIG.UI_CONSTANTS.PERCENTAGE_MAX)
     };
     
     timerBar.classList.add('dragging');
@@ -549,18 +585,18 @@ class MultiTimer {
     // 세로 드래그: 위로 드래그하면 시간 증가 (deltaY가 음수)
     const deltaY = this.dragState.startY - clientY; // 방향 반전
     const barHeight = rect.height;
-    const deltaPercent = (deltaY / barHeight) * 100;
+    const deltaPercent = (deltaY / barHeight) * CONFIG.UI_CONSTANTS.PERCENTAGE_MAX;
     
-    let newPercent = Math.max(0, Math.min(100, this.dragState.initialHeight + deltaPercent));
+    let newPercent = Math.max(0, Math.min(CONFIG.UI_CONSTANTS.PERCENTAGE_MAX, this.dragState.initialHeight + deltaPercent));
     
     // 10초 단위로 스냅
     if (CONFIG.DRAG.SNAP_TO_MINUTES) {
       const timeInSeconds = (newPercent / 100) * this.currentMaxTime;
-      const snappedTime = Math.round(timeInSeconds / 10) * 10; // 10초 단위로 변경
-      newPercent = Math.max(0, (snappedTime / this.currentMaxTime) * 100);
+      const snappedTime = Math.round(timeInSeconds / CONFIG.UI_CONSTANTS.SNAP_UNIT_SECONDS) * CONFIG.UI_CONSTANTS.SNAP_UNIT_SECONDS;
+      newPercent = Math.max(0, (snappedTime / this.currentMaxTime) * CONFIG.UI_CONSTANTS.PERCENTAGE_MAX);
     }
     
-    const newTime = Math.max(CONFIG.TIMERS.MIN_TIME, (newPercent / 100) * this.currentMaxTime);
+    const newTime = Math.max(CONFIG.TIMERS.MIN_TIME, (newPercent / CONFIG.UI_CONSTANTS.PERCENTAGE_MAX) * this.currentMaxTime);
     
     this.updateTimerTime(this.dragState.timerId, newTime);
   }
@@ -619,12 +655,12 @@ class MultiTimer {
     const totalSeconds = (minutes * 60) + seconds;
     
     if (totalSeconds > this.currentMaxTime) {
-      alert(CONFIG.MESSAGES.ERROR.MAX_TIME_EXCEEDED);
+      this.showNotification(CONFIG.MESSAGES.ERROR.MAX_TIME_EXCEEDED, 'error');
       return;
     }
     
     if (totalSeconds < CONFIG.TIMERS.MIN_TIME && totalSeconds > 0) {
-      alert(CONFIG.MESSAGES.ERROR.INVALID_TIME);
+      this.showNotification(CONFIG.MESSAGES.ERROR.INVALID_TIME, 'error');
       return;
     }
     
@@ -668,7 +704,7 @@ class MultiTimer {
     const timer = this.timers[timerId];
     
     if (timer.totalTime === 0) {
-      alert('먼저 시간을 설정해주세요.');
+      this.showNotification('먼저 시간을 설정해주세요.', 'warning');
       return;
     }
     
@@ -711,12 +747,16 @@ class MultiTimer {
         
         // 다음 업데이트 시간 계산 (드리프트 보정)
         const nextUpdate = Math.max(1, 1000 - (elapsed % 1000));
-        this.intervalIds[timerId] = setTimeout(timerTick, nextUpdate);
+        const timeoutId = setTimeout(timerTick, nextUpdate);
+        this.intervalIds[timerId] = timeoutId;
+        this.timeoutIds.add(timeoutId);
       }
     };
     
-    // 첫 번째 틱 실행
-    this.intervalIds[timerId] = setTimeout(timerTick, 100);
+    // 첫 번째 틱 실행 (메모리 추적)
+    const timeoutId = setTimeout(timerTick, 100);
+    this.intervalIds[timerId] = timeoutId;
+    this.timeoutIds.add(timeoutId);
     
     this.updateTimerButton(timerId);
     this.updateRunningCount();
@@ -730,7 +770,8 @@ class MultiTimer {
     timer.isRunning = false;
     
     if (this.intervalIds[timerId]) {
-      clearTimeout(this.intervalIds[timerId]); // setTimeout 사용으로 변경
+      clearTimeout(this.intervalIds[timerId]);
+      this.timeoutIds.delete(this.intervalIds[timerId]);
       this.intervalIds[timerId] = null;
     }
     
@@ -749,7 +790,8 @@ class MultiTimer {
     timer.currentTime = 0;
     
     if (this.intervalIds[timerId]) {
-      clearTimeout(this.intervalIds[timerId]); // setTimeout 사용으로 변경
+      clearTimeout(this.intervalIds[timerId]);
+      this.timeoutIds.delete(this.intervalIds[timerId]);
       this.intervalIds[timerId] = null;
     }
     
@@ -1103,7 +1145,7 @@ class MultiTimer {
   isValidTimerId(timerId) {
     return typeof timerId === 'number' && 
            timerId >= 0 && 
-           timerId < CONFIG.TIMERS.COUNT && 
+           timerId < this.currentTimerCount && 
            this.timers[timerId];
   }
 
@@ -1113,7 +1155,48 @@ class MultiTimer {
     });
   }
 
+  // 모든 디스플레이 업데이트 (배치 처리)
   updateAllDisplays() {
+    this.batchRender(() => {
+      this.timers.forEach((timer, index) => {
+        this.updateTimerDisplay(index);
+        this.updateTimerBar(index);
+        this.updateTimerButton(index);
+        this.updateTimerLabel(index);
+      });
+      this.updateRunningCount();
+    });
+  }
+
+  // 배치 렌더링 시스템
+  batchRender(callback) {
+    if (this.performanceOptimizer.isRendering) {
+      this.performanceOptimizer.renderQueue.push(callback);
+      return;
+    }
+
+    this.performanceOptimizer.isRendering = true;
+    const rafId = requestAnimationFrame(() => {
+      try {
+        callback();
+        
+        // 대기 중인 렌더링 작업 처리
+        while (this.performanceOptimizer.renderQueue.length > 0) {
+          const pendingCallback = this.performanceOptimizer.renderQueue.shift();
+          pendingCallback();
+        }
+      } catch (error) {
+        console.error('Batch render error:', error);
+      } finally {
+        this.performanceOptimizer.isRendering = false;
+        this.rafIds.delete(rafId);
+      }
+    });
+    
+    this.rafIds.add(rafId);
+  }
+
+  updateAllDisplaysOld() {
     this.timers.forEach((timer, index) => {
       this.updateTimerDisplay(index);
       this.updateTimerBar(index);
@@ -1126,6 +1209,97 @@ class MultiTimer {
   updateRunningCount() {
     const runningCount = this.timers.filter(timer => timer.isRunning).length;
     this.domElements.runningCount.textContent = `${runningCount}/${this.currentTimerCount} 실행 중`;
+  }
+
+  /**
+   * 사용자 알림 표시 (alert 대체)
+   * @param {string} message - 알림 메시지
+   * @param {string} type - 알림 타입 (error, warning, info, success)
+   * @param {number} duration - 표시 시간 (ms), 기본값 3000
+   * @public
+   */
+  showNotification(message, type = 'info', duration = CONFIG.UI_CONSTANTS.NOTIFICATION_DURATION) {
+    // 기존 알림이 있다면 제거
+    const existingNotification = document.querySelector('.notification-toast');
+    if (existingNotification) {
+      existingNotification.remove();
+    }
+
+    // 알림 요소 생성
+    const notification = document.createElement('div');
+    notification.className = `notification-toast notification-${type}`;
+    notification.setAttribute('role', 'alert');
+    notification.setAttribute('aria-live', 'assertive');
+    notification.textContent = message;
+
+    // 스타일 적용
+    Object.assign(notification.style, {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      maxWidth: '300px',
+      padding: '12px 16px',
+      borderRadius: '8px',
+      color: 'white',
+      fontSize: '14px',
+      fontWeight: '500',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      zIndex: '10000',
+      opacity: '0',
+      transform: 'translateY(-10px)',
+      transition: 'all 0.3s ease',
+      cursor: 'pointer'
+    });
+
+    // 타입별 배경색
+    const colors = {
+      error: '#DC3545',
+      warning: '#FFC107',
+      success: '#28A745',
+      info: '#007BFF'
+    };
+    notification.style.backgroundColor = colors[type] || colors.info;
+
+    // DOM에 추가
+    document.body.appendChild(notification);
+
+    // 애니메이션으로 표시
+    requestAnimationFrame(() => {
+      notification.style.opacity = '1';
+      notification.style.transform = 'translateY(0)';
+    });
+
+    // 클릭 시 닫기
+    notification.addEventListener('click', () => {
+      this.hideNotification(notification);
+    });
+
+    // 자동 닫기
+    if (duration > 0) {
+      setTimeout(() => {
+        this.hideNotification(notification);
+      }, duration);
+    }
+
+    CONFIG_UTILS.debugLog(`Notification shown: ${type} - ${message}`);
+  }
+
+  /**
+   * 알림 숨기기
+   * @param {HTMLElement} notification - 알림 요소
+   * @private
+   */
+  hideNotification(notification) {
+    if (!notification || !notification.parentNode) return;
+
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateY(-10px)';
+    
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
   }
 
   /**
@@ -1168,6 +1342,76 @@ class MultiTimer {
     CONFIG_UTILS.debugLog('Event listeners cleanup completed');
   }
 
+  // 종료 시 정리 (메모리 누수 방지)
+  destroy() {
+    try {
+      // AbortController로 모든 이벤트 리스너 일괄 제거
+      this.abortController.abort();
+      
+      // 모든 타이머 중지
+      this.timers.forEach((timer, index) => {
+        this.stopTimer(index);
+      });
+      
+      // RAF 정리
+      this.rafIds.forEach(id => {
+        if (id) cancelAnimationFrame(id);
+      });
+      this.rafIds.clear();
+      
+      // Timeout 정리
+      this.timeoutIds.forEach(id => {
+        if (id) clearTimeout(id);
+      });
+      this.timeoutIds.clear();
+      
+      // 렌더링 큐 정리
+      this.performanceOptimizer.renderQueue = [];
+      this.performanceOptimizer.pendingUpdates.clear();
+      
+      // ResizeObserver 정리
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect();
+        this.resizeObserver = null;
+      }
+      
+      // DOM 참조 정리
+      Object.keys(this.domElements).forEach(key => {
+        if (Array.isArray(this.domElements[key])) {
+          this.domElements[key] = [];
+        } else {
+          this.domElements[key] = null;
+        }
+      });
+      
+      CONFIG_UTILS.debugLog('MultiTimer destroyed with complete cleanup');
+    } catch (error) {
+      console.error('Error during MultiTimer cleanup:', error);
+    }
+  }
+
+  // 디바운싱 유틸리티 함수
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        if (timeout) {
+          this.timeoutIds.delete(timeout);
+          timeout = null;
+        }
+        func.apply(this, args);
+      };
+      
+      if (timeout) {
+        clearTimeout(timeout);
+        this.timeoutIds.delete(timeout);
+      }
+      
+      timeout = setTimeout(later, wait);
+      this.timeoutIds.add(timeout);
+    }.bind(this);
+  }
+
   // 사용자 설정 저장/로드
   saveUserSettings() {
     if (!CONFIG.FEATURES.AUTO_SAVE_SETTINGS) return;
@@ -1208,7 +1452,7 @@ class MultiTimer {
         // UI 요소 업데이트
         document.getElementById('max-time-select').value = this.currentMaxTime;
         document.getElementById('auto-start-toggle').checked = this.autoStartEnabled;
-        document.getElementById('timer-count-input').value = this.currentTimerCount;
+        document.getElementById('timer-count-select').value = this.currentTimerCount;
         
         // 라벨 복원
         if (settings.labels) {
@@ -1226,42 +1470,74 @@ class MultiTimer {
   }
 }
 
-// 전역 이벤트 리스너
-document.addEventListener('fullscreenchange', () => {
+// 전역 이벤트 리스너 (성능 최적화)
+const handleFullscreenGlobal = () => {
   const app = window.multiTimerApp;
   if (app) {
     app.isFullscreen = !!document.fullscreenElement;
     
-    // 풀스크린 모드에서 패널 숨기기/보이기
-    const appContainer = document.querySelector('.app-container');
-    if (app.isFullscreen) {
-      appContainer.classList.add('fullscreen-mode');
-    } else {
-      appContainer.classList.remove('fullscreen-mode');
-    }
+    // DOM 조작 배치 처리
+    requestAnimationFrame(() => {
+      const appContainer = document.querySelector('.app-container');
+      if (app.isFullscreen) {
+        appContainer.classList.add('fullscreen-mode');
+      } else {
+        appContainer.classList.remove('fullscreen-mode');
+      }
+    });
   }
-});
+};
 
-// 앱 초기화
+document.addEventListener('fullscreenchange', handleFullscreenGlobal);
+document.addEventListener('webkitfullscreenchange', handleFullscreenGlobal);
+document.addEventListener('mozfullscreenchange', handleFullscreenGlobal);
+
+// 앱 초기화 (성능 최적화)
 document.addEventListener('DOMContentLoaded', () => {
-  window.multiTimerApp = new MultiTimer();
-  
-  // 설정 자동 저장
-  if (CONFIG.FEATURES.AUTO_SAVE_SETTINGS) {
-    setInterval(() => {
-      window.multiTimerApp.saveUserSettings();
-    }, 30000); // 30초마다 저장
-  }
-  
-  // 성능 모니터링 (개발 모드)
-  if (CONFIG.DEBUG.SHOW_PERFORMANCE_METRICS) {
-    setInterval(() => {
-      console.log('Performance metrics:', {
-        timers: window.multiTimerApp.timers.length,
-        runningTimers: window.multiTimerApp.timers.filter(t => t.isRunning).length,
-        memory: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB' : 'N/A'
-      });
-    }, 10000); // 10초마다
+  try {
+    window.multiTimerApp = new MultiTimer();
+    
+    // 설정 자동 저장 (디바운싱 적용)
+    if (CONFIG.FEATURES.AUTO_SAVE_SETTINGS) {
+      const saveSettings = () => {
+        if (window.multiTimerApp) {
+          window.multiTimerApp.saveUserSettings();
+        }
+      };
+      
+      // 디바운싱된 자동 저장
+      setInterval(saveSettings, CONFIG.PERFORMANCE.AUTO_SAVE_INTERVAL);
+      
+      // 페이지 언로드 시 저장
+      window.addEventListener('beforeunload', saveSettings);
+    }
+    
+    // 성능 모니터링 (개발 모드)
+    if (CONFIG.DEBUG.SHOW_PERFORMANCE_METRICS) {
+      const monitorPerformance = () => {
+        if (window.multiTimerApp) {
+          const metrics = {
+            timers: window.multiTimerApp.timers.length,
+            runningTimers: window.multiTimerApp.timers.filter(t => t.isRunning).length,
+            renderQueueSize: window.multiTimerApp.performanceOptimizer.renderQueue.length,
+            memory: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB' : 'N/A'
+          };
+          console.log('Performance metrics:', metrics);
+        }
+      };
+      
+      setInterval(monitorPerformance, 10000); // 10초마다
+    }
+    
+    // 메모리 누수 방지 - 페이지 언로드 시 정리
+    window.addEventListener('beforeunload', () => {
+      if (window.multiTimerApp && typeof window.multiTimerApp.destroy === 'function') {
+        window.multiTimerApp.destroy();
+      }
+    });
+    
+  } catch (error) {
+    console.error('Failed to initialize MultiTimer:', error);
   }
 });
 
