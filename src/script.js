@@ -78,7 +78,11 @@ class MultiTimer {
       soundOptions: null,
       previewBtns: null,
       // 전역 컨트롤 요소들
-      runningCount: null
+      runningCount: null,
+      // 전체 타이머 설정 요소들
+      globalMinutesInput: null,
+      globalSecondsInput: null,
+      applyGlobalTimeBtn: null
     };
 
     // 성능 최적화 시스템
@@ -101,7 +105,6 @@ class MultiTimer {
       this.cacheDOMElements();
       this.updateAllDisplays(); // DOM 캐싱 후 UI 업데이트
       this.bindEvents();
-      this.loadUserSettings();
       CONFIG_UTILS.debugLog('MultiTimer initialized successfully');
     } catch (error) {
       console.error('MultiTimer initialization failed:', error);
@@ -280,6 +283,11 @@ class MultiTimer {
       
       // 전역 컨트롤 요소들 캐싱
       this.domElements.runningCount = document.getElementById('running-count');
+      
+      // 전체 타이머 설정 요소들 캐싱
+      this.domElements.globalMinutesInput = document.getElementById('global-minutes-input');
+      this.domElements.globalSecondsInput = document.getElementById('global-seconds-input');
+      this.domElements.applyGlobalTimeBtn = document.getElementById('apply-global-time-btn');
       
     } catch (error) {
       console.error('DOM element caching failed:', error);
@@ -524,6 +532,9 @@ class MultiTimer {
         this.closeSoundSelectModal();
       }
     });
+
+    // 전체 타이머 설정 이벤트
+    this.domElements.applyGlobalTimeBtn.addEventListener('click', () => this.applyGlobalTime());
   }
 
   // 키보드 이벤트 바인딩
@@ -596,7 +607,7 @@ class MultiTimer {
       newPercent = Math.max(0, (snappedTime / this.currentMaxTime) * CONFIG.UI_CONSTANTS.PERCENTAGE_MAX);
     }
     
-    const newTime = Math.max(CONFIG.TIMERS.MIN_TIME, (newPercent / CONFIG.UI_CONSTANTS.PERCENTAGE_MAX) * this.currentMaxTime);
+    const newTime = Math.max(0, (newPercent / CONFIG.UI_CONSTANTS.PERCENTAGE_MAX) * this.currentMaxTime);
     
     this.updateTimerTime(this.dragState.timerId, newTime);
   }
@@ -659,10 +670,6 @@ class MultiTimer {
       return;
     }
     
-    if (totalSeconds < CONFIG.TIMERS.MIN_TIME && totalSeconds > 0) {
-      this.showNotification(CONFIG.MESSAGES.ERROR.INVALID_TIME, 'error');
-      return;
-    }
     
     const timerId = this.currentEditingTimer;
     this.updateTimerTime(timerId, totalSeconds);
@@ -702,11 +709,6 @@ class MultiTimer {
   // 개별 타이머 토글
   toggleTimer(timerId) {
     const timer = this.timers[timerId];
-    
-    if (timer.totalTime === 0) {
-      this.showNotification('먼저 시간을 설정해주세요.', 'warning');
-      return;
-    }
     
     if (timer.isRunning) {
       this.stopTimer(timerId);
@@ -966,9 +968,33 @@ class MultiTimer {
         'alert': 'TIMER_5'
       };
       this.selectedSound = soundMap[selectedOption.value] || 'TIMER_1';
-      this.saveUserSettings(); // 설정 저장
     }
     this.closeSoundSelectModal();
+  }
+
+  // 전체 타이머 시간 적용
+  applyGlobalTime() {
+    const minutes = Math.min(parseInt(this.domElements.globalMinutesInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_MINUTES);
+    const seconds = Math.min(parseInt(this.domElements.globalSecondsInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_SECONDS);
+    
+    const totalSeconds = (minutes * 60) + seconds;
+    
+    if (totalSeconds > this.currentMaxTime) {
+      this.showNotification(CONFIG.MESSAGES.ERROR.MAX_TIME_EXCEEDED, 'error');
+      return;
+    }
+    
+    // 모든 타이머에 시간 적용
+    for (let i = 0; i < this.currentTimerCount; i++) {
+      this.updateTimerTime(i, totalSeconds);
+      
+      // 자동 시작이 활성화되어 있고 시간이 0보다 크면 타이머 시작
+      if (this.autoStartEnabled && totalSeconds > 0) {
+        this.startTimer(i);
+      }
+    }
+    
+    this.showNotification(`모든 타이머가 ${CONFIG_UTILS.formatTime(totalSeconds)}로 설정되었습니다.`, 'success');
   }
 
   // 종료음 미리듣기
@@ -1412,62 +1438,6 @@ class MultiTimer {
     }.bind(this);
   }
 
-  // 사용자 설정 저장/로드
-  saveUserSettings() {
-    if (!CONFIG.FEATURES.AUTO_SAVE_SETTINGS) return;
-    
-    const settings = {
-      maxTime: this.currentMaxTime,
-      timerCount: this.currentTimerCount,
-      labels: this.timers.map(timer => timer.label),
-      autoStartEnabled: this.autoStartEnabled,
-      selectedSound: this.selectedSound
-    };
-    
-    try {
-      localStorage.setItem(CONFIG.STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(settings));
-    } catch (error) {
-      CONFIG_UTILS.debugLog('Failed to save settings:', error);
-    }
-  }
-
-  loadUserSettings() {
-    if (!CONFIG.FEATURES.AUTO_SAVE_SETTINGS) return;
-    
-    try {
-      const saved = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_PREFERENCES);
-      if (saved) {
-        const settings = JSON.parse(saved);
-        
-        this.currentMaxTime = settings.maxTime || CONFIG.TIMERS.DEFAULT_MAX_TIME;
-        this.autoStartEnabled = settings.autoStartEnabled !== undefined ? settings.autoStartEnabled : CONFIG.FEATURES.AUTO_START_ENABLED;
-        this.selectedSound = settings.selectedSound || CONFIG.FEATURES.SELECTED_SOUND;
-        
-        // 타이머 개수 복원 (저장된 개수가 있으면 사용)
-        if (settings.timerCount && settings.timerCount !== this.currentTimerCount) {
-          this.currentTimerCount = settings.timerCount;
-          // HTML 재생성 및 재초기화가 필요하지만 이미 초기화 과정에서 처리됨
-        }
-        
-        // UI 요소 업데이트
-        document.getElementById('max-time-select').value = this.currentMaxTime;
-        document.getElementById('auto-start-toggle').checked = this.autoStartEnabled;
-        document.getElementById('timer-count-select').value = this.currentTimerCount;
-        
-        // 라벨 복원
-        if (settings.labels) {
-          settings.labels.forEach((label, index) => {
-            if (index < this.timers.length) {
-              this.timers[index].label = label;
-              document.getElementById(`label-${index}`).value = label;
-            }
-          });
-        }
-      }
-    } catch (error) {
-      CONFIG_UTILS.debugLog('Failed to load settings:', error);
-    }
-  }
 }
 
 // 전역 이벤트 리스너 (성능 최적화)
@@ -1497,20 +1467,6 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     window.multiTimerApp = new MultiTimer();
     
-    // 설정 자동 저장 (디바운싱 적용)
-    if (CONFIG.FEATURES.AUTO_SAVE_SETTINGS) {
-      const saveSettings = () => {
-        if (window.multiTimerApp) {
-          window.multiTimerApp.saveUserSettings();
-        }
-      };
-      
-      // 디바운싱된 자동 저장
-      setInterval(saveSettings, CONFIG.PERFORMANCE.AUTO_SAVE_INTERVAL);
-      
-      // 페이지 언로드 시 저장
-      window.addEventListener('beforeunload', saveSettings);
-    }
     
     // 성능 모니터링 (개발 모드)
     if (CONFIG.DEBUG.SHOW_PERFORMANCE_METRICS) {
@@ -1541,12 +1497,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// 페이지 언로드 시 설정 저장 및 리소스 정리
+// 페이지 언로드 시 리소스 정리
 window.addEventListener('beforeunload', () => {
   if (window.multiTimerApp) {
-    if (CONFIG.FEATURES.AUTO_SAVE_SETTINGS) {
-      window.multiTimerApp.saveUserSettings();
-    }
     // 리소스 정리
     window.multiTimerApp.cleanup();
   }

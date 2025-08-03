@@ -38,7 +38,7 @@ const CONFIG = {
     MIN_COUNT: 5,                // 최소 타이머 개수  
     MAX_COUNT: 15,               // 최대 타이머 개수
     TIMERS_PER_ROW: 5,           // 한 줄당 타이머 개수 (고정)
-    MIN_TIME: 60,                // 1분 (초)
+    MIN_TIME: 1,                 // 1초
     DEFAULT_MAX_TIME: 1800,      // 30분 (초)
     MAX_TIME_OPTIONS: [
       { value: 600, label: '10분' },
@@ -73,7 +73,7 @@ const CONFIG = {
     TIMER_COLORS: [
       '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA726', '#AB47BC',
       '#28A745', '#DC3545', '#6F42C1', '#FD7E14', '#20C997',
-      '#6C757D', '#F8F9FA', '#FF1744', '#00E676', '#2979FF',
+      '#6C757D', '#E91E63', '#FF1744', '#00E676', '#2979FF',
       '#FF5722', '#9C27B0', '#4CAF50', '#FFC107', '#00BCD4'
     ],
     BACKGROUND: '#F8F9FA',
@@ -132,7 +132,7 @@ const CONFIG = {
     ROTATION_LOCK_ENABLED: true,
     KEYBOARD_SHORTCUTS: true,
     TOUCH_FEEDBACK: true,
-    AUTO_SAVE_SETTINGS: true,
+    AUTO_SAVE_SETTINGS: false,
     AUTO_START_ENABLED: true, // 시간 설정 시 자동 시작 기본값
     SELECTED_SOUND: 'TIMER_1', // 선택된 종료음
     DYNAMIC_TIMER_COUNT: true // 동적 타이머 개수 변경 허용

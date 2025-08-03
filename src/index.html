@@ -48,7 +48,6 @@
 
             <div class="panel-section">
                 <h3>타이머 라벨</h3>
-                <button id="manage-labels-btn" class="control-btn" aria-label="타이머 라벨 관리">라벨 관리</button>
                 <div class="label-inputs" id="label-inputs-container">
                     <!-- 동적으로 생성됨 -->
                 </div>
@@ -63,7 +62,20 @@
         </main>
 
         <!-- 오른쪽 컨트롤 패널 (15%) -->
-        <aside class="right-panel" role="complementary" aria-label="화면 설정 및 도움말">
+        <aside class="right-panel" role="complementary" aria-label="사용자 설정 및 도움말">
+            <div class="panel-section">
+                <h3>전체 타이머 설정</h3>
+                <div class="time-input-group">
+                    <label for="global-minutes-input">분:</label>
+                    <input type="number" id="global-minutes-input" min="0" max="59" value="0" aria-label="전체 타이머 분 입력">
+                </div>
+                <div class="time-input-group">
+                    <label for="global-seconds-input">초:</label>
+                    <input type="number" id="global-seconds-input" min="0" max="59" value="0" aria-label="전체 타이머 초 입력">
+                </div>
+                <button id="apply-global-time-btn" class="control-btn start-btn" aria-label="모든 타이머에 시간 적용">모든 타이머에 적용</button>
+            </div>
+            
             <div class="panel-section">
                 <h3>화면 설정</h3>
                 <button id="fullscreen-btn" class="control-btn" aria-label="풀스크린 모드 토글">
