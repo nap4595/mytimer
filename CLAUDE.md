@@ -100,6 +100,13 @@ MultiTimer/
 3. DOM 요소는 domElements에 캐싱하여 재사용
 4. 메모리 누수 방지를 위해 이벤트 리스너에 abortController 사용
 
+### 코드 품질 가이드라인
+1. **에러 처리**: 모든 DOM 조작과 사용자 입력에 try-catch 블록 사용
+2. **성능 최적화**: CSS will-change 속성으로 애니메이션 성능 향상
+3. **접근성**: 모든 입력 필드에 적절한 aria-label과 autocomplete 속성 추가
+4. **브라우저 호환성**: CSS Grid에 대한 Flexbox fallback 제공
+5. **오디오 처리**: AudioContext 지원 여부 확인 후 대체 방안 제공
+
 ### 디버깅 모드
 `config.js`에서 디버그 모드 활성화:
 ```javascript

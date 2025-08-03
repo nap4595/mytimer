@@ -904,7 +904,14 @@ class MultiTimer {
 
   // 알람 소리 재생
   async playAlarmSound(soundFile) {
+    if (!CONFIG.NOTIFICATIONS.SOUND_ENABLED) return;
+    
     try {
+      // AudioContext 지원 여부 사전 확인
+      if (!window.AudioContext && !window.webkitAudioContext) {
+        throw new Error('AudioContext not supported');
+      }
+      
       // 브라우저에서 기본 beep 소리 사용 (실제 파일 없이도 작동)
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
@@ -924,7 +931,26 @@ class MultiTimer {
       
     } catch (error) {
       CONFIG_UTILS.debugLog('Audio playback failed:', error);
-      // 대체 방법: 시스템 beep
+      this.fallbackAlarm();
+    }
+  }
+
+  /**
+   * 알림 소리 대체 방안
+   * @private
+   */
+  fallbackAlarm() {
+    try {
+      // 대체 방안: 진동 사용 (지원 기기에서)
+      if ('vibrate' in navigator && CONFIG.NOTIFICATIONS.VIBRATION_ENABLED) {
+        navigator.vibrate([200, 100, 200]);
+      }
+      
+      // 비주얼 알림으로 사용자에게 알림
+      this.showNotification('타이머 완료!', 'success');
+    } catch (fallbackError) {
+      CONFIG_UTILS.debugLog('Fallback alarm also failed:', fallbackError);
+      // 최후의 수단: 콘솔 알림
       console.log('\a'); // ASCII bell character
     }
   }
@@ -1039,20 +1065,34 @@ class MultiTimer {
   // UI 업데이트 메서드들
   /**
    * 타이머 표시 업데이트 - 캐시된 DOM 요소 사용
-   * @param {number} timerId - 타이멸 ID
+   * @param {number} timerId - 타이머 ID
    */
   updateTimerDisplay(timerId) {
-    if (!this.isValidTimerId(timerId)) return;
-    
-    const timer = this.timers[timerId];
-    const timeText = this.domElements.timeTexts[timerId];
-    
-    if (!timeText) {
-      console.warn(`Time text element not found for timer ${timerId}`);
-      return;
+    try {
+      if (!this.isValidTimerId(timerId)) {
+        throw new Error(`Invalid timer ID: ${timerId}`);
+      }
+      
+      const timer = this.timers[timerId];
+      const timeText = this.domElements.timeTexts[timerId];
+      
+      if (!timeText) {
+        throw new Error(`Time text element not found for timer ${timerId}`);
+      }
+      
+      timeText.textContent = CONFIG_UTILS.formatTime(timer.currentTime);
+    } catch (error) {
+      CONFIG_UTILS.debugLog(`Failed to update timer display: ${error.message}`);
+      // 기본값으로 복구 시도
+      try {
+        const timeText = this.domElements.timeTexts[timerId];
+        if (timeText) {
+          timeText.textContent = '00:00';
+        }
+      } catch (recoveryError) {
+        CONFIG_UTILS.debugLog(`Failed to recover timer display: ${recoveryError.message}`);
+      }
     }
-    
-    timeText.textContent = CONFIG_UTILS.formatTime(timer.currentTime);
   }
 
   /**

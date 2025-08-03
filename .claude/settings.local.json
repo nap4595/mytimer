@@ -12,7 +12,8 @@
       "Bash(git push:*)",
       "mcp__sequential-thinking__sequentialthinking",
       "mcp__playwright__browser_close",
-      "mcp__playwright__browser_select_option"
+      "mcp__playwright__browser_select_option",
+      "Bash(python:*)"
     ],
     "deny": []
   }

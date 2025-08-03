@@ -133,7 +133,7 @@ const CONFIG = {
     KEYBOARD_SHORTCUTS: true,
     TOUCH_FEEDBACK: true,
     AUTO_SAVE_SETTINGS: false,
-    AUTO_START_ENABLED: true, // 시간 설정 시 자동 시작 기본값
+    AUTO_START_ENABLED: false, // 시간 설정 시 자동 시작 기본값
     SELECTED_SOUND: 'TIMER_1', // 선택된 종료음
     DYNAMIC_TIMER_COUNT: true // 동적 타이머 개수 변경 허용
   },

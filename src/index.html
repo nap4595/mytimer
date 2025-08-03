@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="다중 타이머 애플리케이션 - 최대 15개의 타이머를 동시에 관리하세요">
+    <meta name="keywords" content="타이머, 다중타이머, 시간관리, 멀티타이머, 작업관리">
+    <meta name="author" content="MultiTimer Team">
     <title>MultiTimer - 다중 타이머</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -67,11 +70,11 @@
                 <h3>전체 타이머 설정</h3>
                 <div class="time-input-group">
                     <label for="global-minutes-input">분:</label>
-                    <input type="number" id="global-minutes-input" min="0" max="59" value="0" aria-label="전체 타이머 분 입력">
+                    <input type="number" id="global-minutes-input" min="0" max="59" step="1" value="0" autocomplete="off" aria-label="전체 타이머 분 입력">
                 </div>
                 <div class="time-input-group">
                     <label for="global-seconds-input">초:</label>
-                    <input type="number" id="global-seconds-input" min="0" max="59" value="0" aria-label="전체 타이머 초 입력">
+                    <input type="number" id="global-seconds-input" min="0" max="59" step="1" value="0" autocomplete="off" aria-label="전체 타이머 초 입력">
                 </div>
                 <button id="apply-global-time-btn" class="control-btn start-btn" aria-label="모든 타이머에 시간 적용">모든 타이머에 적용</button>
             </div>
@@ -84,7 +87,7 @@
                 </button>
                 <div class="auto-start-setting">
                     <label class="auto-start-label" for="auto-start-toggle">
-                        <input type="checkbox" id="auto-start-toggle" checked aria-describedby="auto-start-desc">
+                        <input type="checkbox" id="auto-start-toggle" aria-describedby="auto-start-desc">
                         <span class="checkmark" aria-hidden="true"></span>
                         자동 시작
                     </label>
@@ -117,11 +120,11 @@
             <div class="modal-body">
                 <div class="time-input-group">
                     <label for="minutes-input">분:</label>
-                    <input type="number" id="minutes-input" min="0" max="59" value="0" aria-label="분 입력">
+                    <input type="number" id="minutes-input" min="0" max="59" step="1" value="0" autocomplete="off" aria-label="분 입력">
                 </div>
                 <div class="time-input-group">
                     <label for="seconds-input">초:</label>
-                    <input type="number" id="seconds-input" min="0" max="59" value="0" aria-label="초 입력">
+                    <input type="number" id="seconds-input" min="0" max="59" step="1" value="0" autocomplete="off" aria-label="초 입력">
                 </div>
             </div>
             <div class="modal-footer">
@@ -143,35 +146,35 @@
                     <label>
                         <input type="radio" name="sound-option" value="bell" checked>
                         <span class="radio-label">벨 소리 🔔</span>
-                        <button class="preview-btn" data-sound="bell">미리듣기</button>
+                        <button type="button" class="preview-btn" data-sound="bell" aria-label="벨 소리 미리듣기">미리듣기</button>
                     </label>
                 </div>
                 <div class="sound-option-group">
                     <label>
                         <input type="radio" name="sound-option" value="chime">
                         <span class="radio-label">차임 소리 🎐</span>
-                        <button class="preview-btn" data-sound="chime">미리듣기</button>
+                        <button type="button" class="preview-btn" data-sound="chime" aria-label="차임 소리 미리듣기">미리듣기</button>
                     </label>
                 </div>
                 <div class="sound-option-group">
                     <label>
                         <input type="radio" name="sound-option" value="beep">
                         <span class="radio-label">비프 소리 📢</span>
-                        <button class="preview-btn" data-sound="beep">미리듣기</button>
+                        <button type="button" class="preview-btn" data-sound="beep" aria-label="비프 소리 미리듣기">미리듣기</button>
                     </label>
                 </div>
                 <div class="sound-option-group">
                     <label>
                         <input type="radio" name="sound-option" value="ding">
                         <span class="radio-label">딩 소리 🔊</span>
-                        <button class="preview-btn" data-sound="ding">미리듣기</button>
+                        <button type="button" class="preview-btn" data-sound="ding" aria-label="딩 소리 미리듣기">미리듣기</button>
                     </label>
                 </div>
                 <div class="sound-option-group">
                     <label>
                         <input type="radio" name="sound-option" value="alert">
                         <span class="radio-label">알림 소리 ⚠️</span>
-                        <button class="preview-btn" data-sound="alert">미리듣기</button>
+                        <button type="button" class="preview-btn" data-sound="alert" aria-label="알림 소리 미리듣기">미리듣기</button>
                     </label>
                 </div>
             </div>
