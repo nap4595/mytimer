@@ -975,14 +975,37 @@ class MultiTimer {
     }
   }
 
-  // 깜빡임 효과 시작
+  // 깜빡임 효과 시작 (5번 깜빡이고 자동 리셋)
   startBlinkEffect(timerId) {
     this.domElements.timerRows[timerId].classList.add('completed');
+    
+    // 5초 후 (1초 × 5번 깜빡임) 자동으로 00:00으로 리셋
+    setTimeout(() => {
+      // 타이머가 여전히 완료 상태인지 확인 (사용자가 수동으로 리셋하지 않았는지)
+      if (this.timers[timerId].isCompleted) {
+        this.resetTimerToZero(timerId);
+      }
+    }, 5000);
   }
 
   // 깜빡임 효과 중지
   stopBlinkEffect(timerId) {
     this.domElements.timerRows[timerId].classList.remove('completed');
+  }
+
+  // 타이머를 00:00으로 리셋 (완료 후 자동 리셋용)
+  resetTimerToZero(timerId) {
+    const timer = this.timers[timerId];
+    timer.currentTime = 0;
+    timer.isCompleted = false;
+    
+    this.stopBlinkEffect(timerId);
+    this.updateTimerDisplay(timerId);
+    this.updateTimerBar(timerId);
+    this.updateTimerButton(timerId);
+    this.updateRunningCount();
+    
+    CONFIG_UTILS.debugLog(`Timer ${timerId + 1} auto-reset to 00:00 after blinking`);
   }
 
   // 타이머 사운드 가져오기 (선택된 소리 사용)

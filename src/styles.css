@@ -749,7 +749,7 @@ body {
 
 /* 상태별 스타일 */
 .timer-row.completed {
-  animation: blink var(--blink-duration) infinite;
+  animation: blink var(--blink-duration) 5;
 }
 
 .timer-row.completed .reset-btn {
