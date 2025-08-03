@@ -48,6 +48,7 @@ class MultiTimer {
     this.autoStartEnabled = CONFIG.FEATURES.AUTO_START_ENABLED;
     this.selectedSound = CONFIG.FEATURES.SELECTED_SOUND; // frozen CONFIG 대신 별도 상태로 관리
     this.currentTheme = CONFIG.FEATURES.CURRENT_THEME; // 현재 테마 상태 관리
+    this.sequentialExecution = CONFIG.FEATURES.SEQUENTIAL_EXECUTION; // 순차적 실행 상태 관리
     this.dragState = {
       isDragging: false,
       timerId: null,
@@ -91,7 +92,9 @@ class MultiTimer {
       // 전체 타이머 설정 요소들
       globalMinutesInput: null,
       globalSecondsInput: null,
-      applyGlobalTimeBtn: null
+      applyGlobalTimeBtn: null,
+      // 순차적 실행 설정 요소들
+      sequentialToggle: null
     };
 
     // 성능 최적화 시스템
@@ -116,6 +119,7 @@ class MultiTimer {
       this.applyTheme(); // 테마 적용
       this.updateAllTimerColors(); // 모든 타이머 색상 업데이트
       this.updateAllDisplays(); // DOM 캐싱 후 UI 업데이트
+      this.updateStartAllButtonText(); // 초기 버튼 텍스트 설정
       this.bindEvents();
       CONFIG_UTILS.debugLog('MultiTimer initialized successfully');
     } catch (error) {
@@ -309,6 +313,9 @@ class MultiTimer {
       this.domElements.globalMinutesInput = document.getElementById('global-minutes-input');
       this.domElements.globalSecondsInput = document.getElementById('global-seconds-input');
       this.domElements.applyGlobalTimeBtn = document.getElementById('apply-global-time-btn');
+      
+      // 순차적 실행 설정 요소들 캐싱
+      this.domElements.sequentialToggle = document.getElementById('sequential-toggle');
       
     } catch (error) {
       console.error('DOM element caching failed:', error);
@@ -515,6 +522,15 @@ class MultiTimer {
   bindRightPanelControls() {
     // 풀스크린 버튼
     document.getElementById('fullscreen-btn').addEventListener('click', () => this.toggleFullscreen());
+    
+    // 순차적 실행 토글
+    if (this.domElements.sequentialToggle) {
+      this.domElements.sequentialToggle.addEventListener('change', (e) => {
+        this.sequentialExecution = e.target.checked;
+        this.updateStartAllButtonText();
+        CONFIG_UTILS.debugLog(`Sequential execution ${this.sequentialExecution ? 'enabled' : 'disabled'}`);
+      }, { signal: this.abortController.signal });
+    }
   }
 
   // 모달 이벤트 바인딩
@@ -833,16 +849,70 @@ class MultiTimer {
       navigator.vibrate([200, 100, 200]);
     }
     
+    // 순차적 실행이 활성화된 경우 다음 타이머 자동 시작
+    if (this.sequentialExecution) {
+      this.startNextAvailableTimer(timerId);
+    }
+    
     CONFIG_UTILS.debugLog(`Timer ${timerId} completed`);
   }
 
   // 전체 타이머 시작
   startAllTimers() {
-    this.timers.forEach((timer, index) => {
+    if (this.sequentialExecution) {
+      // 순차적 실행이 활성화된 경우: 첫 번째 타이머만 시작
+      this.startFirstAvailableTimer();
+    } else {
+      // 기본 동작: 모든 타이머 동시 시작
+      this.timers.forEach((timer, index) => {
+        if (timer.totalTime > 0 && !timer.isRunning) {
+          this.startTimer(index);
+        }
+      });
+    }
+  }
+
+  // 첫 번째 사용 가능한 타이머 시작 (순차적 실행용)
+  startFirstAvailableTimer() {
+    for (let i = 0; i < this.timers.length; i++) {
+      const timer = this.timers[i];
       if (timer.totalTime > 0 && !timer.isRunning) {
-        this.startTimer(index);
+        this.startTimer(i);
+        CONFIG_UTILS.debugLog(`Started first available timer: ${i + 1}`);
+        break; // 첫 번째 타이머만 시작하고 중단
       }
-    });
+    }
+  }
+
+  // 다음 사용 가능한 타이머 시작 (순차적 실행용)
+  startNextAvailableTimer(completedTimerId) {
+    // 완료된 타이머 다음부터 시작해서 사용 가능한 타이머 찾기
+    for (let i = completedTimerId + 1; i < this.timers.length; i++) {
+      const timer = this.timers[i];
+      if (timer.totalTime > 0 && !timer.isRunning && !timer.isCompleted) {
+        this.startTimer(i);
+        CONFIG_UTILS.debugLog(`Started next available timer after ${completedTimerId + 1}: ${i + 1}`);
+        return; // 다음 타이머를 찾아 시작했으므로 종료
+      }
+    }
+    
+    // 마지막 타이머까지 도달했다면 순차적 실행 종료
+    CONFIG_UTILS.debugLog(`Sequential execution completed. No more timers available after timer ${completedTimerId + 1}`);
+  }
+
+  // 전체 시작 버튼 텍스트 업데이트 (순차적 실행 상태에 따라)
+  updateStartAllButtonText() {
+    const startAllBtn = document.getElementById('start-all-btn');
+    if (startAllBtn) {
+      if (this.sequentialExecution) {
+        startAllBtn.textContent = '순차 시작';
+        startAllBtn.setAttribute('aria-label', '첫 번째 타이머 시작 (순차적 실행 모드)');
+      } else {
+        startAllBtn.textContent = '전체 시작';
+        startAllBtn.setAttribute('aria-label', '모든 타이머 시작');
+      }
+      CONFIG_UTILS.debugLog(`Start button text updated to: ${startAllBtn.textContent}`);
+    }
   }
 
   // 전체 타이머 정지

@@ -451,6 +451,37 @@ body {
   font-weight: bold;
 }
 
+/* 순차적 실행 설정 */
+.sequential-setting {
+  margin-top: 15px;
+  padding: 10px 0;
+}
+
+.sequential-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-color);
+  user-select: none;
+}
+
+.sequential-label input[type="checkbox"] {
+  display: none;
+}
+
+.sequential-label input[type="checkbox"]:checked + .checkmark {
+  background-color: var(--info-color);
+  border-color: var(--info-color);
+}
+
+.sequential-label input[type="checkbox"]:checked + .checkmark::after {
+  content: '⏭';
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+}
+
 /* 최대 시간 선택기 */
 .max-time-selector {
   width: 100%;
