@@ -47,6 +47,7 @@ class MultiTimer {
     this.isFullscreen = false;
     this.autoStartEnabled = CONFIG.FEATURES.AUTO_START_ENABLED;
     this.selectedSound = CONFIG.FEATURES.SELECTED_SOUND; // frozen CONFIG 대신 별도 상태로 관리
+    this.currentTheme = CONFIG.FEATURES.CURRENT_THEME; // 현재 테마 상태 관리
     this.dragState = {
       isDragging: false,
       timerId: null,
@@ -77,6 +78,14 @@ class MultiTimer {
       soundSelectBtn: null,
       soundOptions: null,
       previewBtns: null,
+      // 테마 선택 모달 요소들
+      themeModal: null,
+      themeModalClose: null,
+      themeConfirmBtn: null,
+      themeCancelBtn: null,
+      themeSelectBtn: null,
+      themeOptions: null,
+      currentThemeName: null,
       // 전역 컨트롤 요소들
       runningCount: null,
       // 전체 타이머 설정 요소들
@@ -103,6 +112,9 @@ class MultiTimer {
       this.createTimerHTML(); // 먼저 HTML 생성
       this.initializeTimers();
       this.cacheDOMElements();
+      this.loadSettings(); // 설정 로드 (테마 포함)
+      this.applyTheme(); // 테마 적용
+      this.updateAllTimerColors(); // 모든 타이머 색상 업데이트
       this.updateAllDisplays(); // DOM 캐싱 후 UI 업데이트
       this.bindEvents();
       CONFIG_UTILS.debugLog('MultiTimer initialized successfully');
@@ -281,6 +293,15 @@ class MultiTimer {
       this.domElements.soundOptions = this.domElements.soundModal.querySelectorAll('input[name="sound-option"]');
       this.domElements.previewBtns = this.domElements.soundModal.querySelectorAll('.preview-btn');
       
+      // 테마 선택 모달 요소들 캐싱
+      this.domElements.themeModal = document.getElementById('theme-select-modal');
+      this.domElements.themeModalClose = this.domElements.themeModal.querySelector('.modal-close');
+      this.domElements.themeConfirmBtn = document.getElementById('theme-confirm-btn');
+      this.domElements.themeCancelBtn = document.getElementById('theme-cancel-btn');
+      this.domElements.themeSelectBtn = document.getElementById('theme-select-btn');
+      this.domElements.themeOptions = this.domElements.themeModal.querySelectorAll('input[name="theme-option"]');
+      this.domElements.currentThemeName = document.getElementById('current-theme-name');
+      
       // 전역 컨트롤 요소들 캐싱
       this.domElements.runningCount = document.getElementById('running-count');
       
@@ -317,6 +338,9 @@ class MultiTimer {
     
     // 모달 이벤트
     this.bindModalEvents();
+    
+    // 테마 선택 이벤트
+    this.bindThemeEvents();
     
     // 키보드 단축키
     if (CONFIG.FEATURES.KEYBOARD_SHORTCUTS) {
@@ -1470,6 +1494,192 @@ class MultiTimer {
       timeout = setTimeout(later, wait);
       this.timeoutIds.add(timeout);
     }.bind(this);
+  }
+
+  // === 테마 시스템 메서드들 ===
+
+  /**
+   * 테마 관련 이벤트 바인딩
+   */
+  bindThemeEvents() {
+    if (!this.domElements.themeSelectBtn) return;
+
+    // 테마 선택 버튼 클릭
+    this.domElements.themeSelectBtn.addEventListener('click', () => {
+      this.openThemeModal();
+    }, { signal: this.abortController.signal });
+
+    // 테마 확인 버튼
+    if (this.domElements.themeConfirmBtn) {
+      this.domElements.themeConfirmBtn.addEventListener('click', () => {
+        this.confirmThemeSelection();
+      }, { signal: this.abortController.signal });
+    }
+
+    // 테마 취소 버튼
+    if (this.domElements.themeCancelBtn) {
+      this.domElements.themeCancelBtn.addEventListener('click', () => {
+        this.closeThemeModal();
+      }, { signal: this.abortController.signal });
+    }
+
+    // 테마 모달 닫기 버튼
+    if (this.domElements.themeModalClose) {
+      this.domElements.themeModalClose.addEventListener('click', () => {
+        this.closeThemeModal();
+      }, { signal: this.abortController.signal });
+    }
+
+    // 모달 배경 클릭 시 닫기
+    if (this.domElements.themeModal) {
+      this.domElements.themeModal.addEventListener('click', (e) => {
+        if (e.target === this.domElements.themeModal) {
+          this.closeThemeModal();
+        }
+      }, { signal: this.abortController.signal });
+    }
+  }
+
+  /**
+   * 테마 선택 모달 열기
+   */
+  openThemeModal() {
+    if (!this.domElements.themeModal) return;
+
+    // 현재 테마에 따라 라디오 버튼 설정
+    this.domElements.themeOptions.forEach(option => {
+      option.checked = option.value === this.currentTheme;
+    });
+
+    this.domElements.themeModal.style.display = 'block';
+    this.domElements.themeModal.setAttribute('aria-hidden', 'false');
+
+    // 첫 번째 라디오 버튼에 포커스
+    const firstRadio = this.domElements.themeModal.querySelector('input[type="radio"]');
+    if (firstRadio) {
+      firstRadio.focus();
+    }
+  }
+
+  /**
+   * 테마 선택 확인
+   */
+  confirmThemeSelection() {
+    const selectedOption = this.domElements.themeModal.querySelector('input[name="theme-option"]:checked');
+    
+    if (selectedOption && selectedOption.value !== this.currentTheme) {
+      this.currentTheme = selectedOption.value;
+      this.applyTheme();
+      this.updateAllTimerColors();
+      this.saveSettings();
+    }
+
+    this.closeThemeModal();
+  }
+
+  /**
+   * 테마 선택 모달 닫기
+   */
+  closeThemeModal() {
+    if (!this.domElements.themeModal) return;
+
+    this.domElements.themeModal.style.display = 'none';
+    this.domElements.themeModal.setAttribute('aria-hidden', 'true');
+  }
+
+  /**
+   * 테마 적용
+   */
+  applyTheme() {
+    const body = document.body;
+    const theme = CONFIG.THEMES[this.currentTheme] || CONFIG.THEMES.COLOR;
+    
+    // 테마 클래스 적용/제거
+    if (this.currentTheme === 'MINIMAL') {
+      body.classList.add('minimal-theme');
+    } else {
+      body.classList.remove('minimal-theme');
+    }
+    
+    // 현재 테마 이름 업데이트
+    if (this.domElements.currentThemeName) {
+      this.domElements.currentThemeName.textContent = theme.NAME;
+    }
+    
+    CONFIG_UTILS.debugLog(`Theme applied: ${theme.NAME}`);
+  }
+
+  /**
+   * 모든 타이머 색상 업데이트
+   */
+  updateAllTimerColors() {
+    for (let i = 0; i < this.currentTimerCount; i++) {
+      this.updateTimerColor(i);
+    }
+  }
+
+  /**
+   * 개별 타이머 색상 업데이트
+   */
+  updateTimerColor(timerId) {
+    if (!this.isValidTimerId(timerId)) return;
+    
+    const timerFill = this.domElements.timerFills[timerId];
+    if (!timerFill) return;
+    
+    const color = CONFIG_UTILS.getTimerColor(timerId, this.currentTheme);
+    timerFill.style.backgroundColor = color;
+    
+    // 타이머 객체의 색상도 업데이트
+    if (this.timers[timerId]) {
+      this.timers[timerId].color = color;
+    }
+  }
+
+  /**
+   * 설정 로드
+   */
+  loadSettings() {
+    try {
+      const savedSettings = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_PREFERENCES);
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        
+        if (settings.currentTheme && CONFIG.THEMES[settings.currentTheme]) {
+          this.currentTheme = settings.currentTheme;
+        }
+        
+        if (settings.autoStartEnabled !== undefined) {
+          this.autoStartEnabled = settings.autoStartEnabled;
+        }
+        
+        if (settings.selectedSound !== undefined) {
+          this.selectedSound = settings.selectedSound;
+        }
+        
+        CONFIG_UTILS.debugLog('Settings loaded successfully', settings);
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  }
+
+  /**
+   * 설정 저장
+   */
+  saveSettings() {
+    try {
+      const settings = {
+        currentTheme: this.currentTheme,
+        autoStartEnabled: this.autoStartEnabled,
+        selectedSound: this.selectedSound
+      };
+      
+      localStorage.setItem(CONFIG.STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(settings));
+      CONFIG_UTILS.debugLog('Settings saved successfully', settings);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    }
   }
 
 }

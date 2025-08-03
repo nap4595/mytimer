@@ -80,6 +80,17 @@
             </div>
             
             <div class="panel-section">
+                <h3>테마</h3>
+                <button id="theme-select-btn" class="control-btn" aria-label="테마 선택">
+                    <span class="btn-icon" aria-hidden="true">🎨</span>
+                    <span class="btn-text">테마</span>
+                </button>
+                <div class="current-theme">
+                    <span id="current-theme-name">컬러 테마</span>
+                </div>
+            </div>
+
+            <div class="panel-section">
                 <h3>화면 설정</h3>
                 <button id="fullscreen-btn" class="control-btn" aria-label="풀스크린 모드 토글">
                     <span class="btn-icon" aria-hidden="true">⛶</span>
@@ -181,6 +192,48 @@
             <div class="modal-footer">
                 <button id="sound-confirm-btn" class="control-btn start-btn" aria-label="종료음 선택 확인">확인</button>
                 <button id="sound-cancel-btn" class="control-btn" aria-label="종료음 선택 취소">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 테마 선택 모달 -->
+    <div id="theme-select-modal" class="modal" role="dialog" aria-labelledby="theme-modal-title" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="theme-modal-title">테마 선택</h3>
+                <button class="modal-close" aria-label="모달 닫기">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="theme-option-group">
+                    <label>
+                        <input type="radio" name="theme-option" value="COLOR" checked>
+                        <span class="theme-label">컬러 테마</span>
+                        <div class="theme-preview color-preview">
+                            <div class="preview-timer" style="background-color: #FF6B6B;"></div>
+                            <div class="preview-timer" style="background-color: #4ECDC4;"></div>
+                            <div class="preview-timer" style="background-color: #45B7D1;"></div>
+                            <div class="preview-timer" style="background-color: #FFA726;"></div>
+                            <div class="preview-timer" style="background-color: #AB47BC;"></div>
+                        </div>
+                    </label>
+                </div>
+                <div class="theme-option-group">
+                    <label>
+                        <input type="radio" name="theme-option" value="MINIMAL">
+                        <span class="theme-label">미니멀 테마</span>
+                        <div class="theme-preview minimal-preview">
+                            <div class="preview-timer" style="background-color: #6B7280;"></div>
+                            <div class="preview-timer" style="background-color: #6B7280;"></div>
+                            <div class="preview-timer" style="background-color: #6B7280;"></div>
+                            <div class="preview-timer" style="background-color: #6B7280;"></div>
+                            <div class="preview-timer" style="background-color: #6B7280;"></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="theme-confirm-btn" class="control-btn start-btn" aria-label="테마 선택 확인">확인</button>
+                <button id="theme-cancel-btn" class="control-btn" aria-label="테마 선택 취소">취소</button>
             </div>
         </div>
     </div>

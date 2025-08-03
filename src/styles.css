@@ -15,7 +15,7 @@
 
 /* CSS 맞춤형 속성 - CONFIG.js와 동기화 */
 :root {
-  /* 주요 타이머 색상 */
+  /* 주요 타이머 색상 - 컬러 테마 (기본) */
   --timer-1-color: #FF6B6B;
   --timer-2-color: #4ECDC4;
   --timer-3-color: #45B7D1;
@@ -29,7 +29,7 @@
   --info-color: #17A2B8;
   --secondary-color: #6C757D;
   
-  /* 기본 색상 체계 */
+  /* 컬러 테마 (기본) */
   --bg-color: #F8F9FA;
   --panel-bg: #FFFFFF;
   --text-color: #212529;
@@ -38,6 +38,15 @@
   --hover-bg: #F8F9FA;
   --shadow: 0 2px 4px rgba(0,0,0,0.1);
   --shadow-hover: 0 4px 8px rgba(0,0,0,0.15);
+  
+  /* 미니멀 테마 색상 */
+  --minimal-bg-color: #FFFFFF;
+  --minimal-panel-bg: #FAFAFA;
+  --minimal-text-color: #374151;
+  --minimal-text-light: #9CA3AF;
+  --minimal-border-color: #E5E7EB;
+  --minimal-timer-color: #6B7280;
+  --minimal-hover-bg: #F9FAFB;
   
   /* 레이아웃 변수 */
   --left-panel-width: 15%;
@@ -633,6 +642,64 @@ body {
   background-color: #0056b3;
 }
 
+/* 테마 선택 모달 스타일 */
+.theme-option-group {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  transition: border-color var(--transition-fast);
+}
+
+.theme-option-group:hover {
+  border-color: var(--info-color);
+}
+
+.theme-option-group label {
+  display: block;
+  cursor: pointer;
+  width: 100%;
+}
+
+.theme-option-group input[type="radio"] {
+  margin-right: 10px;
+  margin-bottom: 10px;
+  transform: scale(1.2);
+}
+
+.theme-label {
+  font-weight: bold;
+  font-size: 16px;
+  color: var(--text-color);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.theme-preview {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: var(--hover-bg);
+  border-radius: var(--border-radius);
+}
+
+.preview-timer {
+  width: 30px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.current-theme {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 5px;
+  padding: 5px 0;
+  text-align: center;
+  border-top: 1px solid var(--border-color);
+}
+
 /* 애니메이션 정의 */
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -701,6 +768,64 @@ body {
 
 .timer-container[data-timer-count="15"] .timer-row {
   font-size: 0.9em;
+}
+
+/* 미니멀 테마 스타일 */
+.minimal-theme {
+  --bg-color: var(--minimal-bg-color);
+  --panel-bg: var(--minimal-panel-bg);
+  --text-color: var(--minimal-text-color);
+  --text-light: var(--minimal-text-light);
+  --border-color: var(--minimal-border-color);
+  --hover-bg: var(--minimal-hover-bg);
+}
+
+.minimal-theme body {
+  background-color: var(--minimal-bg-color);
+  color: var(--minimal-text-color);
+}
+
+.minimal-theme .left-panel,
+.minimal-theme .right-panel {
+  background-color: var(--minimal-panel-bg);
+  border-color: var(--minimal-border-color);
+}
+
+.minimal-theme .timer-row {
+  background-color: var(--minimal-panel-bg);
+  border: 1px solid var(--minimal-border-color);
+}
+
+.minimal-theme .timer-fill {
+  background-color: var(--minimal-timer-color) !important;
+}
+
+.minimal-theme .control-btn {
+  background-color: var(--minimal-panel-bg);
+  color: var(--minimal-text-color);
+  border-color: var(--minimal-border-color);
+}
+
+.minimal-theme .control-btn:hover {
+  background-color: var(--minimal-hover-bg);
+}
+
+.minimal-theme .start-btn {
+  background-color: var(--minimal-timer-color);
+  color: white;
+}
+
+.minimal-theme .start-btn:hover {
+  background-color: #4B5563;
+}
+
+.minimal-theme .modal-content {
+  background-color: var(--minimal-panel-bg);
+  border-color: var(--minimal-border-color);
+}
+
+.minimal-theme .modal-content h3 {
+  color: var(--minimal-text-color);
 }
 
 /* 풀스크린 모드에서 패널 숨기기 */

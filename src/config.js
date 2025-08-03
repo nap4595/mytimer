@@ -62,7 +62,52 @@ const CONFIG = {
     }
   },
 
-  // 색상 설정
+  // 테마 시스템
+  THEMES: {
+    // 컬러 테마 (기본)
+    COLOR: {
+      NAME: '컬러 테마',
+      // 15개 타이머별 고정 색상 테이블 (1-15번)
+      TIMER_COLOR_TABLE: {
+        1: '#FF6B6B',   // 빨강
+        2: '#4ECDC4',   // 청록
+        3: '#45B7D1',   // 파랑
+        4: '#FFA726',   // 주황
+        5: '#AB47BC',   // 보라
+        6: '#28A745',   // 초록
+        7: '#DC3545',   // 진한 빨강
+        8: '#6F42C1',   // 진한 보라
+        9: '#FD7E14',   // 진한 주황
+        10: '#20C997',  // 청록
+        11: '#6C757D',  // 회색
+        12: '#E91E63',  // 핑크
+        13: '#FF1744',  // 빨강
+        14: '#00E676',  // 초록
+        15: '#2979FF'   // 파랑
+      },
+      BACKGROUND: '#F8F9FA',
+      PANEL_BG: '#FFFFFF',
+      TEXT: '#212529',
+      TEXT_LIGHT: '#6C757D',
+      BORDER: '#DEE2E6'
+    },
+    // 미니멀 테마
+    MINIMAL: {
+      NAME: '미니멀 테마',
+      TIMER_COLOR_TABLE: {
+        1: '#6B7280', 2: '#6B7280', 3: '#6B7280', 4: '#6B7280', 5: '#6B7280',
+        6: '#6B7280', 7: '#6B7280', 8: '#6B7280', 9: '#6B7280', 10: '#6B7280',
+        11: '#6B7280', 12: '#6B7280', 13: '#6B7280', 14: '#6B7280', 15: '#6B7280'
+      },
+      BACKGROUND: '#FFFFFF',
+      PANEL_BG: '#FAFAFA',
+      TEXT: '#374151',
+      TEXT_LIGHT: '#9CA3AF',
+      BORDER: '#E5E7EB'
+    }
+  },
+
+  // 색상 설정 (호환성을 위해 유지)
   COLORS: {
     TIMER_1: '#FF6B6B',
     TIMER_2: '#4ECDC4', 
@@ -135,7 +180,8 @@ const CONFIG = {
     AUTO_SAVE_SETTINGS: false,
     AUTO_START_ENABLED: false, // 시간 설정 시 자동 시작 기본값
     SELECTED_SOUND: 'TIMER_1', // 선택된 종료음
-    DYNAMIC_TIMER_COUNT: true // 동적 타이머 개수 변경 허용
+    DYNAMIC_TIMER_COUNT: true, // 동적 타이머 개수 변경 허용
+    CURRENT_THEME: 'COLOR' // 현재 선택된 테마 ('COLOR' 또는 'MINIMAL')
   },
 
   // 시간 형식 설정
@@ -217,6 +263,9 @@ const CONFIG = {
 // CONFIG 객체를 불변으로 만들어 실수로 수정되는 것을 방지
 Object.freeze(CONFIG);
 Object.freeze(CONFIG.TIMERS);
+Object.freeze(CONFIG.THEMES);
+Object.freeze(CONFIG.THEMES.COLOR);
+Object.freeze(CONFIG.THEMES.MINIMAL);
 Object.freeze(CONFIG.COLORS);
 Object.freeze(CONFIG.SOUNDS);
 Object.freeze(CONFIG.UI);
@@ -232,9 +281,29 @@ Object.freeze(CONFIG.DEBUG);
 
 // 유틸리티 함수들
 const CONFIG_UTILS = {
-  // 타이머 색상 가져오기 (동적 색상 순환)
-  getTimerColor: (timerId) => {
-    return CONFIG.COLORS.TIMER_COLORS[timerId % CONFIG.COLORS.TIMER_COLORS.length];
+  // 현재 테마 가져오기
+  getCurrentTheme: () => {
+    return CONFIG.THEMES[CONFIG.FEATURES.CURRENT_THEME] || CONFIG.THEMES.COLOR;
+  },
+
+  // 테마별 타이머 색상 가져오기 (고정 테이블 기반)
+  getTimerColor: (timerId, themeName = CONFIG.FEATURES.CURRENT_THEME) => {
+    const theme = CONFIG.THEMES[themeName] || CONFIG.THEMES.COLOR;
+    const timerNumber = timerId + 1; // 0-based to 1-based
+    
+    // 1-15번 타이머에 대한 고정 색상 반환
+    if (timerNumber >= 1 && timerNumber <= 15) {
+      return theme.TIMER_COLOR_TABLE[timerNumber];
+    }
+    
+    // 범위를 벗어나는 경우 기본값 (발생하지 않아야 함)
+    return theme.TIMER_COLOR_TABLE[1] || '#6B7280';
+  },
+
+  // 테마별 배경색 가져오기
+  getThemeColor: (colorKey, themeName = CONFIG.FEATURES.CURRENT_THEME) => {
+    const theme = CONFIG.THEMES[themeName] || CONFIG.THEMES.COLOR;
+    return theme[colorKey] || theme.BACKGROUND;
   },
 
   // 타이머 사운드 가져오기 (선택된 소리 사용)
