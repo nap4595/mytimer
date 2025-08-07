@@ -30,33 +30,39 @@
 - 풀스크린 모드
 - 모든 설정 자동 저장 (localStorage)
 
+## 🌐 온라인 데모
+
+**GitHub Pages로 바로 사용하기**: https://[username].github.io/mytimer
+
 ## 🚀 실행 방법
+
+### 온라인 사용
+위 GitHub Pages 링크에서 바로 사용할 수 있습니다.
 
 ### 로컬 서버 실행
 ```bash
 # Python 서버
-cd src
 python -m http.server 8000
 
 # Node.js 서버
-npx serve src
+npx serve .
 
 # 브라우저 접속
 http://localhost:8000
 ```
 
 ### 직접 실행
-`src/index.html` 파일을 브라우저에서 직접 열어도 모든 기능이 정상 작동합니다.
+`index.html` 파일을 브라우저에서 직접 열어도 모든 기능이 정상 작동합니다.
 
 ## 📁 프로젝트 구조
 
 ```
 MultiTimer/
-├── src/
-│   ├── index.html          # 메인 HTML (접근성 마크업 포함)
-│   ├── styles.css          # CSS Grid 기반 반응형 스타일
-│   ├── config.js           # 중앙화된 설정 관리 (CONFIG 패턴)
-│   └── script.js           # 메인 JavaScript 로직
+├── index.html              # 메인 HTML (접근성 마크업 포함)
+├── styles.css              # CSS Grid 기반 반응형 스타일
+├── config.js               # 중앙화된 설정 관리 (CONFIG 패턴)
+├── script.js               # 메인 JavaScript 로직
+├── src/                    # 원본 소스 파일들 (개발용)
 ├── docs/
 │   └── PRD_idea_timer.md   # 상세 기획 문서
 ├── CLAUDE.md               # 개발 가이드라인
@@ -184,6 +190,29 @@ MultiTimer/
 ## 📄 라이선스
 
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 🚀 배포 (GitHub Pages)
+
+### 자동 배포
+이 프로젝트는 GitHub Pages를 통해 자동 배포됩니다:
+
+1. **GitHub 저장소 생성**: `mytimer` 저장소를 퍼블릭으로 생성
+2. **코드 푸시**: 
+   ```bash
+   git remote add origin https://github.com/[username]/mytimer.git
+   git branch -M main
+   git push -u origin main
+   ```
+3. **GitHub Pages 활성화**:
+   - Settings → Pages
+   - Source: "Deploy from a branch" 
+   - Branch: "main" / root
+4. **접속**: `https://[username].github.io/mytimer`
+
+### 배포 특징
+- **정적 호스팅**: 서버가 필요 없는 순수 프론트엔드 애플리케이션
+- **즉시 배포**: 코드 푸시 후 몇 분 내 자동 배포
+- **무료 호스팅**: GitHub Pages 무료 서비스 이용
 
 ## 🤝 기여하기
 
