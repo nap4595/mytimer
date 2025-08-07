@@ -32,7 +32,7 @@
 
 ## 🌐 온라인 데모
 
-**GitHub Pages로 바로 사용하기**: https://[username].github.io/mytimer
+**GitHub Pages로 바로 사용하기**: https://nap4595.github.io/mytimer
 
 ## 🚀 실행 방법
 
