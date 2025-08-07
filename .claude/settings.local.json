@@ -13,7 +13,10 @@
       "mcp__sequential-thinking__sequentialthinking",
       "mcp__playwright__browser_close",
       "mcp__playwright__browser_select_option",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(git restore:*)",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_wait_for"
     ],
     "deny": []
   }
