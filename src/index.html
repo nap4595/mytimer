@@ -14,6 +14,27 @@
     <a href="#timer-container" class="sr-only">메인 콘텐츠로 바로 가기</a>
     
     <div class="app-container" role="application" aria-label="MultiTimer - 다중 타이머 애플리케이션">
+        
+        <!-- 모바일 전용 상단 상태바 -->
+        <div class="mobile-status-bar" id="mobile-status-bar" role="banner" aria-label="상태 및 빠른 설정">
+            <div class="status-left">
+                <span class="timer-count-display" id="mobile-timer-count" aria-live="polite">⏱️0/5</span>
+            </div>
+            <div class="status-right">
+                <button class="status-btn audio-toggle-btn" id="mobile-audio-toggle" aria-label="음향 토글" title="음향 설정">
+                    <span class="status-icon">🔊</span>
+                </button>
+                <button class="status-btn vibration-toggle-btn" id="mobile-vibration-toggle" aria-label="진동 토글" title="진동 설정">
+                    <span class="status-icon">📱</span>
+                </button>
+                <button class="status-btn fullscreen-toggle-btn" id="mobile-fullscreen-toggle" aria-label="전체화면 토글" title="전체화면">
+                    <span class="status-icon">⛶</span>
+                </button>
+                <button class="status-btn settings-toggle-btn" id="mobile-settings-toggle" aria-label="설정 메뉴" title="설정">
+                    <span class="status-icon">≡</span>
+                </button>
+            </div>
+        </div>
         <!-- 왼쪽 컨트롤 패널 (15%) -->
         <aside class="left-panel" role="complementary" aria-label="타이머 전체 컨트롤">
             <div class="panel-section">
@@ -91,11 +112,7 @@
             </div>
 
             <div class="panel-section">
-                <h3>화면 설정</h3>
-                <button id="fullscreen-btn" class="control-btn" aria-label="풀스크린 모드 토글">
-                    <span class="btn-icon" aria-hidden="true">⛶</span>
-                    <span class="btn-text">풀스크린</span>
-                </button>
+                <h3>고급 설정</h3>
                 <div class="auto-start-setting">
                     <label class="auto-start-label" for="auto-start-toggle">
                         <input type="checkbox" id="auto-start-toggle" aria-describedby="auto-start-desc">
@@ -112,10 +129,6 @@
                     </label>
                     <div id="sequential-desc" class="sr-only">한 타이머 종료 시 자동으로 다음 타이머 시작</div>
                 </div>
-                <button id="sound-select-btn" class="control-btn" aria-label="종료음 선택">
-                    <span class="btn-icon" aria-hidden="true">🔊</span>
-                    <span class="btn-text">종료음</span>
-                </button>
             </div>
 
             <div class="panel-section">
@@ -243,6 +256,19 @@
                 <button id="theme-confirm-btn" class="control-btn start-btn" aria-label="테마 선택 확인">확인</button>
                 <button id="theme-cancel-btn" class="control-btn" aria-label="테마 선택 취소">취소</button>
             </div>
+        </div>
+
+        <!-- 모바일 전용 하단 컨트롤바 -->
+        <div class="mobile-control-bar" id="mobile-control-bar" role="toolbar" aria-label="전체 타이머 제어">
+            <button class="control-bar-btn start-all-btn" id="mobile-start-all" aria-label="모든 타이머 시작" title="전체 시작">
+                <span class="control-icon">▶️</span>
+            </button>
+            <button class="control-bar-btn stop-all-btn" id="mobile-stop-all" aria-label="모든 타이머 정지" title="전체 정지">
+                <span class="control-icon">⏹️</span>
+            </button>
+            <button class="control-bar-btn reset-all-btn" id="mobile-reset-all" aria-label="모든 타이머 리셋" title="전체 리셋">
+                <span class="control-icon">↻</span>
+            </button>
         </div>
     </div>
 

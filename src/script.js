@@ -49,6 +49,10 @@ class MultiTimer {
     this.selectedSound = CONFIG.FEATURES.SELECTED_SOUND; // frozen CONFIG 대신 별도 상태로 관리
     this.currentTheme = CONFIG.FEATURES.CURRENT_THEME; // 현재 테마 상태 관리
     this.sequentialExecution = CONFIG.FEATURES.SEQUENTIAL_EXECUTION; // 순차적 실행 상태 관리
+    
+    // 모바일 전용 설정 상태
+    this.audioEnabled = true; // 음향 상태
+    this.vibrationEnabled = true; // 진동 상태 (지원 기기만)
     this.dragState = {
       isDragging: false,
       timerId: null,
@@ -94,7 +98,16 @@ class MultiTimer {
       globalSecondsInput: null,
       applyGlobalTimeBtn: null,
       // 순차적 실행 설정 요소들
-      sequentialToggle: null
+      sequentialToggle: null,
+      // 모바일 전용 요소들
+      mobileTimerCount: null,
+      mobileAudioToggle: null,
+      mobileVibrationToggle: null,
+      mobileFullscreenToggle: null,
+      mobileSettingsToggle: null,
+      mobileStartAll: null,
+      mobileStopAll: null,
+      mobileResetAll: null
     };
 
     // 성능 최적화 시스템
@@ -120,6 +133,7 @@ class MultiTimer {
       this.updateAllTimerColors(); // 모든 타이머 색상 업데이트
       this.updateAllDisplays(); // DOM 캐싱 후 UI 업데이트
       this.updateStartAllButtonText(); // 초기 버튼 텍스트 설정
+      this.initializeMobileUI(); // 모바일 UI 초기화
       this.bindEvents();
       CONFIG_UTILS.debugLog('MultiTimer initialized successfully');
     } catch (error) {
@@ -317,6 +331,16 @@ class MultiTimer {
       // 순차적 실행 설정 요소들 캐싱
       this.domElements.sequentialToggle = document.getElementById('sequential-toggle');
       
+      // 모바일 전용 요소들 캐싱 (존재하는 경우에만)
+      this.domElements.mobileTimerCount = document.getElementById('mobile-timer-count');
+      this.domElements.mobileAudioToggle = document.getElementById('mobile-audio-toggle');
+      this.domElements.mobileVibrationToggle = document.getElementById('mobile-vibration-toggle');
+      this.domElements.mobileFullscreenToggle = document.getElementById('mobile-fullscreen-toggle');
+      this.domElements.mobileSettingsToggle = document.getElementById('mobile-settings-toggle');
+      this.domElements.mobileStartAll = document.getElementById('mobile-start-all');
+      this.domElements.mobileStopAll = document.getElementById('mobile-stop-all');
+      this.domElements.mobileResetAll = document.getElementById('mobile-reset-all');
+      
     } catch (error) {
       console.error('DOM element caching failed:', error);
       throw error;
@@ -353,6 +377,9 @@ class MultiTimer {
     if (CONFIG.FEATURES.KEYBOARD_SHORTCUTS) {
       this.bindKeyboardEvents();
     }
+    
+    // 모바일 전용 이벤트
+    this.bindMobileEvents();
   }
 
   // 드래그 이벤트 바인딩
@@ -593,6 +620,61 @@ class MultiTimer {
           }
           break;
       }
+    });
+  }
+
+  // 모바일 전용 이벤트 바인딩
+  bindMobileEvents() {
+    // 음향 토글 버튼
+    if (this.domElements.mobileAudioToggle) {
+      this.domElements.mobileAudioToggle.addEventListener('click', () => {
+        this.toggleAudio();
+      });
+    }
+
+    // 진동 토글 버튼
+    if (this.domElements.mobileVibrationToggle) {
+      this.domElements.mobileVibrationToggle.addEventListener('click', () => {
+        this.toggleVibration();
+      });
+    }
+
+    // 전체화면 토글 버튼
+    if (this.domElements.mobileFullscreenToggle) {
+      this.domElements.mobileFullscreenToggle.addEventListener('click', () => {
+        this.toggleFullscreen();
+      });
+    }
+
+    // 설정 토글 버튼 (슬라이드 패널)
+    if (this.domElements.mobileSettingsToggle) {
+      this.domElements.mobileSettingsToggle.addEventListener('click', () => {
+        this.toggleMobileSettings();
+      });
+    }
+
+    // 하단 컨트롤 버튼들
+    if (this.domElements.mobileStartAll) {
+      this.domElements.mobileStartAll.addEventListener('click', () => {
+        this.startAllTimers();
+      });
+    }
+
+    if (this.domElements.mobileStopAll) {
+      this.domElements.mobileStopAll.addEventListener('click', () => {
+        this.stopAllTimers();
+      });
+    }
+
+    if (this.domElements.mobileResetAll) {
+      this.domElements.mobileResetAll.addEventListener('click', () => {
+        this.resetAllTimers();
+      });
+    }
+
+    // 전체화면 상태 변화 감지
+    document.addEventListener('fullscreenchange', () => {
+      this.updateFullscreenIcon();
     });
   }
 
@@ -1506,6 +1588,182 @@ class MultiTimer {
       CONFIG_UTILS.debugLog('MultiTimer resources cleaned up successfully');
     } catch (error) {
       console.error('Cleanup failed:', error);
+    }
+  }
+
+  // 모바일 전용 기능들
+
+  /**
+   * 모바일 UI 초기화
+   */
+  initializeMobileUI() {
+    // 초기 아이콘 상태 설정
+    this.updateAudioIcon();
+    this.updateVibrationIcon();
+    this.updateFullscreenIcon();
+    this.updateMobileTimerCount();
+    
+    // 모바일 타이머 카운트 정기 업데이트 (1초마다)
+    setInterval(() => {
+      this.updateMobileTimerCount();
+    }, 1000);
+    
+    CONFIG_UTILS.debugLog('Mobile UI initialized');
+  }
+
+  /**
+   * 음향 토글 기능
+   */
+  toggleAudio() {
+    this.audioEnabled = !this.audioEnabled;
+    this.updateAudioIcon();
+    this.saveSettings();
+    
+    // 즉시 피드백 (활성화 시 테스트 사운드)
+    if (this.audioEnabled) {
+      this.playTestSound();
+    }
+    
+    CONFIG_UTILS.debugLog(`Audio ${this.audioEnabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * 진동 토글 기능
+   */
+  toggleVibration() {
+    this.vibrationEnabled = !this.vibrationEnabled;
+    this.updateVibrationIcon();
+    this.saveSettings();
+    
+    // 즉시 피드백 (활성화 시 테스트 진동)
+    if (this.vibrationEnabled && navigator.vibrate) {
+      navigator.vibrate(100);
+    }
+    
+    CONFIG_UTILS.debugLog(`Vibration ${this.vibrationEnabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * 모바일 설정 패널 토글 (슬라이드)
+   */
+  toggleMobileSettings() {
+    const panels = document.querySelectorAll('.left-panel, .right-panel');
+    const isVisible = panels[0] && panels[0].style.display !== 'none';
+    
+    panels.forEach(panel => {
+      if (isVisible) {
+        panel.style.display = 'none';
+      } else {
+        panel.style.display = 'block';
+        panel.style.position = 'fixed';
+        panel.style.top = '40px';
+        panel.style.right = '0';
+        panel.style.width = '85%';
+        panel.style.height = 'calc(100vh - 100px)';
+        panel.style.zIndex = '200';
+        panel.style.boxShadow = '-4px 0 8px rgba(0,0,0,0.3)';
+        panel.style.transform = 'translateX(0)';
+        panel.style.transition = 'transform 0.3s ease';
+      }
+    });
+    
+    // 오버레이 배경
+    this.toggleMobileOverlay(!isVisible);
+  }
+
+  /**
+   * 모바일 오버레이 토글
+   */
+  toggleMobileOverlay(show) {
+    let overlay = document.getElementById('mobile-overlay');
+    
+    if (show && !overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'mobile-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 150;
+        transition: opacity 0.3s ease;
+      `;
+      overlay.addEventListener('click', () => {
+        this.toggleMobileSettings(); // 오버레이 클릭시 설정 닫기
+      });
+      document.body.appendChild(overlay);
+    } else if (!show && overlay) {
+      overlay.remove();
+    }
+  }
+
+  /**
+   * 상태바 아이콘들 업데이트
+   */
+  updateAudioIcon() {
+    if (this.domElements.mobileAudioToggle) {
+      const icon = this.domElements.mobileAudioToggle.querySelector('.status-icon');
+      if (icon) {
+        icon.textContent = this.audioEnabled ? '🔊' : '🔇';
+        this.domElements.mobileAudioToggle.classList.toggle('active', this.audioEnabled);
+        this.domElements.mobileAudioToggle.classList.toggle('inactive', !this.audioEnabled);
+      }
+    }
+  }
+
+  updateVibrationIcon() {
+    if (this.domElements.mobileVibrationToggle) {
+      const icon = this.domElements.mobileVibrationToggle.querySelector('.status-icon');
+      if (icon) {
+        icon.textContent = this.vibrationEnabled ? '📱' : '📵';
+        this.domElements.mobileVibrationToggle.classList.toggle('active', this.vibrationEnabled);
+        this.domElements.mobileVibrationToggle.classList.toggle('inactive', !this.vibrationEnabled);
+      }
+    }
+  }
+
+  updateFullscreenIcon() {
+    if (this.domElements.mobileFullscreenToggle) {
+      const icon = this.domElements.mobileFullscreenToggle.querySelector('.status-icon');
+      const isFullscreen = document.fullscreenElement !== null;
+      if (icon) {
+        icon.textContent = isFullscreen ? '⛷' : '⛶';
+        this.domElements.mobileFullscreenToggle.classList.toggle('active', isFullscreen);
+      }
+    }
+  }
+
+  updateMobileTimerCount() {
+    if (this.domElements.mobileTimerCount) {
+      const runningCount = this.timers.filter(timer => timer.isRunning).length;
+      this.domElements.mobileTimerCount.textContent = `⏱️${runningCount}/${this.currentTimerCount}`;
+    }
+  }
+
+  /**
+   * 테스트 사운드 재생
+   */
+  playTestSound() {
+    try {
+      if (this.audioEnabled) {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+      }
+    } catch (error) {
+      console.warn('Test sound playback failed:', error);
     }
   }
 
