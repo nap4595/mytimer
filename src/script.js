@@ -53,6 +53,7 @@ class MultiTimer {
     // 모바일 전용 설정 상태
     this.audioEnabled = true; // 음향 상태
     this.vibrationEnabled = true; // 진동 상태 (지원 기기만)
+    this.uiMode = 'auto'; // 'auto', 'mobile', 'desktop'
     this.dragState = {
       isDragging: false,
       timerId: null,
@@ -130,6 +131,7 @@ class MultiTimer {
       this.cacheDOMElements();
       this.loadSettings(); // 설정 로드 (테마 포함)
       this.applyTheme(); // 테마 적용
+      this.applyDeviceClass(); // 디바이스 타입 감지 및 클래스 적용
       this.updateAllTimerColors(); // 모든 타이머 색상 업데이트
       this.updateAllDisplays(); // DOM 캐싱 후 UI 업데이트
       this.updateStartAllButtonText(); // 초기 버튼 텍스트 설정
@@ -330,6 +332,9 @@ class MultiTimer {
       
       // 순차적 실행 설정 요소들 캐싱
       this.domElements.sequentialToggle = document.getElementById('sequential-toggle');
+      
+      // UI 모드 선택기 캐싱
+      this.domElements.uiModeSelect = document.getElementById('ui-mode-select');
       
       // 모바일 전용 요소들 캐싱 (존재하는 경우에만)
       this.domElements.mobileTimerCount = document.getElementById('mobile-timer-count');
@@ -546,9 +551,13 @@ class MultiTimer {
   }
 
   // 오른쪽 패널 컨트롤 바인딩
-  bindRightPanelControls() {
-    // 풀스크린 버튼
-    document.getElementById('fullscreen-btn').addEventListener('click', () => this.toggleFullscreen());
+  bindRightPanelControls() {    
+    // UI 모드 선택기
+    if (this.domElements.uiModeSelect) {
+      this.domElements.uiModeSelect.addEventListener('change', (e) => {
+        this.setUIMode(e.target.value);
+      }, { signal: this.abortController.signal });
+    }
     
     // 순차적 실행 토글
     if (this.domElements.sequentialToggle) {
@@ -675,6 +684,15 @@ class MultiTimer {
     // 전체화면 상태 변화 감지
     document.addEventListener('fullscreenchange', () => {
       this.updateFullscreenIcon();
+    });
+
+    // 화면 크기/방향 변경 감지 (실시간 모니터링)
+    window.addEventListener('resize', () => {
+      this.handleViewportChange();
+    });
+
+    window.addEventListener('orientationchange', () => {
+      this.handleViewportChange();
     });
   }
 
@@ -1591,6 +1609,104 @@ class MultiTimer {
     }
   }
 
+  // 모바일 감지 및 UI 모드 관리
+
+  /**
+   * 종합적인 모바일 디바이스 감지
+   * @returns {boolean} 모바일 디바이스 여부
+   */
+  isMobileDevice() {
+    // 사용자 강제 설정이 있는 경우 우선 적용
+    if (this.uiMode === 'mobile') return true;
+    if (this.uiMode === 'desktop') return false;
+    
+    // User Agent 기반 감지
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobileKeywords = ['android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone', 'mobile'];
+    const isMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword));
+    
+    // 터치 지원 여부
+    const hasTouchScreen = (
+      'ontouchstart' in window || 
+      navigator.maxTouchPoints > 0 || 
+      navigator.msMaxTouchPoints > 0
+    );
+    
+    // 화면 크기
+    const screenWidth = Math.min(window.innerWidth, window.screen?.width || window.innerWidth);
+    const isSmallScreen = screenWidth <= 768;
+    
+    // 종합 판단 로직
+    if (isMobileUA) {
+      // 확실한 모바일 디바이스인 경우
+      return true;
+    }
+    
+    if (hasTouchScreen && isSmallScreen) {
+      // 터치 지원 + 작은 화면 = 모바일 가능성 높음
+      return true;
+    }
+    
+    // iPad나 큰 태블릿 처리
+    if (userAgent.includes('ipad') || 
+        (hasTouchScreen && screenWidth <= 1024)) {
+      return true;
+    }
+    
+    // 기본값: 데스크탑
+    return false;
+  }
+
+  /**
+   * 디바이스 타입에 따른 CSS 클래스 적용
+   */
+  applyDeviceClass() {
+    const body = document.body;
+    const isMobile = this.isMobileDevice();
+    
+    if (isMobile) {
+      body.classList.add('mobile-device');
+      body.classList.remove('desktop-device');
+      CONFIG_UTILS.debugLog('Mobile UI mode activated');
+    } else {
+      body.classList.add('desktop-device');
+      body.classList.remove('mobile-device');
+      CONFIG_UTILS.debugLog('Desktop UI mode activated');
+    }
+  }
+
+  /**
+   * UI 모드 수동 전환
+   * @param {string} mode - 'auto', 'mobile', 'desktop'
+   */
+  setUIMode(mode) {
+    this.uiMode = mode;
+    this.applyDeviceClass();
+    this.saveSettings();
+    
+    // 설정 변경 피드백
+    const modeNames = {
+      'auto': '자동 감지',
+      'mobile': '모바일 모드',
+      'desktop': '데스크탑 모드'
+    };
+    
+    CONFIG_UTILS.debugLog(`UI 모드 변경: ${modeNames[mode]}`);
+  }
+
+  /**
+   * 화면 크기/방향 변경 감지 및 재평가
+   */
+  handleViewportChange() {
+    // 자동 모드에서만 재평가
+    if (this.uiMode === 'auto') {
+      setTimeout(() => {
+        this.applyDeviceClass();
+        this.updateMobileTimerCount(); // 모바일 UI 업데이트
+      }, 100); // 방향 변경 완료 대기
+    }
+  }
+
   // 모바일 전용 기능들
 
   /**
@@ -2008,6 +2124,22 @@ class MultiTimer {
           this.selectedSound = settings.selectedSound;
         }
         
+        // 모바일 관련 설정 로드
+        if (settings.uiMode !== undefined) {
+          this.uiMode = settings.uiMode;
+          if (this.domElements.uiModeSelect) {
+            this.domElements.uiModeSelect.value = this.uiMode;
+          }
+        }
+        
+        if (settings.audioEnabled !== undefined) {
+          this.audioEnabled = settings.audioEnabled;
+        }
+        
+        if (settings.vibrationEnabled !== undefined) {
+          this.vibrationEnabled = settings.vibrationEnabled;
+        }
+        
         CONFIG_UTILS.debugLog('Settings loaded successfully', settings);
       }
     } catch (error) {
@@ -2023,7 +2155,11 @@ class MultiTimer {
       const settings = {
         currentTheme: this.currentTheme,
         autoStartEnabled: this.autoStartEnabled,
-        selectedSound: this.selectedSound
+        selectedSound: this.selectedSound,
+        // 모바일 관련 설정 저장
+        uiMode: this.uiMode,
+        audioEnabled: this.audioEnabled,
+        vibrationEnabled: this.vibrationEnabled
       };
       
       localStorage.setItem(CONFIG.STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(settings));

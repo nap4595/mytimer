@@ -112,6 +112,27 @@
             </div>
 
             <div class="panel-section">
+                <h3>종료음</h3>
+                <button id="sound-select-btn" class="control-btn" aria-label="종료음 선택">
+                    <span class="btn-icon" aria-hidden="true">🔊</span>
+                    <span class="btn-text">종료음</span>
+                </button>
+                <div class="current-sound">
+                    <span id="current-sound-name">벨 소리</span>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>UI 모드</h3>
+                <label for="ui-mode-select" class="sr-only">UI 모드 선택</label>
+                <select id="ui-mode-select" class="ui-mode-selector" aria-label="UI 모드 선택">
+                    <option value="auto" selected>자동 감지</option>
+                    <option value="mobile">모바일 모드</option>
+                    <option value="desktop">데스크탑 모드</option>
+                </select>
+            </div>
+
+            <div class="panel-section">
                 <h3>고급 설정</h3>
                 <div class="auto-start-setting">
                     <label class="auto-start-label" for="auto-start-toggle">
@@ -257,19 +278,19 @@
                 <button id="theme-cancel-btn" class="control-btn" aria-label="테마 선택 취소">취소</button>
             </div>
         </div>
+    </div>
 
-        <!-- 모바일 전용 하단 컨트롤바 -->
-        <div class="mobile-control-bar" id="mobile-control-bar" role="toolbar" aria-label="전체 타이머 제어">
-            <button class="control-bar-btn start-all-btn" id="mobile-start-all" aria-label="모든 타이머 시작" title="전체 시작">
-                <span class="control-icon">▶️</span>
-            </button>
-            <button class="control-bar-btn stop-all-btn" id="mobile-stop-all" aria-label="모든 타이머 정지" title="전체 정지">
-                <span class="control-icon">⏹️</span>
-            </button>
-            <button class="control-bar-btn reset-all-btn" id="mobile-reset-all" aria-label="모든 타이머 리셋" title="전체 리셋">
-                <span class="control-icon">↻</span>
-            </button>
-        </div>
+    <!-- 모바일 전용 하단 컨트롤바 -->
+    <div class="mobile-control-bar" id="mobile-control-bar" role="toolbar" aria-label="전체 타이머 제어">
+        <button class="control-bar-btn start-all-btn" id="mobile-start-all" aria-label="모든 타이머 시작" title="전체 시작">
+            <span class="control-icon">▶️</span>
+        </button>
+        <button class="control-bar-btn stop-all-btn" id="mobile-stop-all" aria-label="모든 타이머 정지" title="전체 정지">
+            <span class="control-icon">⏹️</span>
+        </button>
+        <button class="control-bar-btn reset-all-btn" id="mobile-reset-all" aria-label="모든 타이머 리셋" title="전체 리셋">
+            <span class="control-icon">↻</span>
+        </button>
     </div>
 
     <script src="config.js"></script>
