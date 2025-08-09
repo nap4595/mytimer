@@ -2,7 +2,7 @@
  * MultiTimer 메인 JavaScript 파일
  * 
  * @fileoverview 프리셋 기반 다중 타이머 관리 시스템
- * @version 1.2.1
+ * @version 1.3.0
  * @author MultiTimer Team
  * @since 2024-01-01
  * 

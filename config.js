@@ -2,7 +2,7 @@
  * MultiTimer 애플리케이션 설정 파일
  * 
  * @fileoverview 중앙화된 설정 관리 시스템
- * @version 1.2.1
+ * @version 1.3.0
  * @author MultiTimer Team
  * @since 2024-01-01
  * 
