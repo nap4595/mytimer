@@ -68,6 +68,7 @@ class MultiTimer {
       timeTexts: [],
       playButtons: [],
       labelTexts: [],
+      labelInputs: [],
       timerBars: [],
       // 모달 관련 요소들
       modal: null,
@@ -98,7 +99,9 @@ class MultiTimer {
       globalMinutesInput: null,
       globalSecondsInput: null,
       applyGlobalTimeBtn: null,
-      // 순차적 실행 설정 요소들
+      maxTimeSelect: null,
+      // 자동 시작 및 순차적 실행 설정 요소들
+      autoStartToggle: null,
       sequentialToggle: null,
       // 모바일 전용 요소들
       mobileTimerCount: null,
@@ -279,6 +282,7 @@ class MultiTimer {
       this.domElements.timeTexts = [];
       this.domElements.playButtons = [];
       this.domElements.labelTexts = [];
+      this.domElements.labelInputs = [];
       this.domElements.timerBars = [];
       
       // 동적 타이머 관련 요소들 캐싱
@@ -295,6 +299,12 @@ class MultiTimer {
         this.domElements.labelTexts[i] = timerRow.querySelector('.label-text');
         this.domElements.timerBars[i] = timerRow.querySelector('.timer-bar');
       }
+      
+      // 라벨 입력 필드들 캐싱
+      const labelInputsNodeList = document.querySelectorAll('.label-input');
+      labelInputsNodeList.forEach((input, index) => {
+        this.domElements.labelInputs[index] = input;
+      });
       
       // 모달 관련 요소들 캐싱
       this.domElements.modal = document.getElementById('time-input-modal');
@@ -329,8 +339,10 @@ class MultiTimer {
       this.domElements.globalMinutesInput = document.getElementById('global-minutes-input');
       this.domElements.globalSecondsInput = document.getElementById('global-seconds-input');
       this.domElements.applyGlobalTimeBtn = document.getElementById('apply-global-time-btn');
+      this.domElements.maxTimeSelect = document.getElementById('max-time-select');
       
-      // 순차적 실행 설정 요소들 캐싱
+      // 자동 시작 및 순차적 실행 설정 요소들 캐싱
+      this.domElements.autoStartToggle = document.getElementById('auto-start-toggle');
       this.domElements.sequentialToggle = document.getElementById('sequential-toggle');
       
       // UI 모드 선택기 캐싱
@@ -526,6 +538,13 @@ class MultiTimer {
     
     // 실행 중 개수 업데이트
     this.updateRunningCount();
+    
+    // 모바일 설정창이 열려있으면 재생성
+    const mobilePanel = document.getElementById('mobile-settings-panel');
+    if (mobilePanel) {
+      this.toggleMobileSettings(); // 닫기
+      this.toggleMobileSettings(); // 다시 열기
+    }
     
     CONFIG_UTILS.debugLog(`Timer count changed to ${newCount}`);
   }
@@ -1234,6 +1253,54 @@ class MultiTimer {
     this.showNotification(`모든 타이머가 ${CONFIG_UTILS.formatTime(totalSeconds)}로 설정되었습니다.`, 'success');
   }
 
+  // 모바일에서 전체 타이머 시간 적용
+  applyGlobalTimeFromMobile(container) {
+    const minutesInput = container.querySelector('#global-minutes-input');
+    const secondsInput = container.querySelector('#global-seconds-input');
+    
+    if (!minutesInput || !secondsInput) {
+      this.showNotification(CONFIG.MESSAGES.ERROR.INVALID_INPUT, 'error');
+      return;
+    }
+    
+    const minutes = Math.min(parseInt(minutesInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_MINUTES);
+    const seconds = Math.min(parseInt(secondsInput.value) || 0, CONFIG.UI.VALIDATION.TIME_INPUT_MAX_SECONDS);
+    
+    const totalSeconds = (minutes * 60) + seconds;
+    
+    if (totalSeconds > this.currentMaxTime) {
+      this.showNotification(CONFIG.MESSAGES.ERROR.MAX_TIME_EXCEEDED, 'error');
+      return;
+    }
+    
+    // 모든 타이머에 시간 적용
+    for (let i = 0; i < this.currentTimerCount; i++) {
+      this.updateTimerTime(i, totalSeconds);
+      
+      // 자동 시작이 활성화되어 있고 시간이 0보다 크면 타이머 시작
+      if (this.autoStartEnabled && totalSeconds > 0) {
+        this.startTimer(i);
+      }
+    }
+    
+    this.showNotification(`모든 타이머가 ${CONFIG_UTILS.formatTime(totalSeconds)}로 설정되었습니다.`, 'success');
+  }
+
+  // 모바일에서 타이머 라벨 업데이트
+  updateTimerLabelFromMobile(index, labelValue) {
+    // 메인 DOM의 라벨 텍스트 업데이트
+    const labelText = this.domElements.labelTexts[index];
+    if (labelText) {
+      labelText.textContent = labelValue || `타이머 ${index + 1}`;
+    }
+    
+    // 원본 입력 필드도 동기화 (설정 저장을 위해)
+    const originalInput = this.domElements.labelInputs[index];
+    if (originalInput) {
+      originalInput.value = labelValue || '';
+    }
+  }
+
   // 종료음 미리듣기
   async previewSound(soundType) {
     const soundMap = {
@@ -1773,8 +1840,8 @@ class MultiTimer {
       // 원본 패널들 다시 표시
       const leftPanel = document.querySelector('.left-panel');
       const rightPanel = document.querySelector('.right-panel');
-      leftPanel.style.display = '';
-      rightPanel.style.display = '';
+      if (leftPanel) leftPanel.style.display = '';
+      if (rightPanel) rightPanel.style.display = '';
       return;
     }
 
@@ -1821,6 +1888,11 @@ class MultiTimer {
     const leftPanel = document.querySelector('.left-panel');
     const rightPanel = document.querySelector('.right-panel');
     
+    if (!leftPanel || !rightPanel) {
+      console.error('Left or right panel not found');
+      return;
+    }
+    
     // 원본 패널들을 일시적으로 숨겨서 ID 충돌 방지
     leftPanel.style.display = 'none';
     rightPanel.style.display = 'none';
@@ -1841,8 +1913,63 @@ class MultiTimer {
       container.appendChild(clonedSection);
     });
     
-    // 복사된 요소들의 이벤트 리스너 재연결
+    // 복사된 요소들의 초기값 설정 및 이벤트 리스너 재연결
+    this.initializeMobileSettingsValues(container);
     this.rebindMobileSettingsEvents(container);
+  }
+
+  /**
+   * 모바일 설정 패널의 초기값 설정
+   */
+  initializeMobileSettingsValues(container) {
+    // 자동 시작 체크박스 초기값 설정
+    const autoStartToggle = container.querySelector('#auto-start-toggle');
+    if (autoStartToggle) {
+      if (this.autoStartEnabled) {
+        autoStartToggle.setAttribute('checked', 'checked');
+      } else {
+        autoStartToggle.removeAttribute('checked');
+      }
+      autoStartToggle.checked = this.autoStartEnabled;
+    }
+    
+    // 순차적 실행 체크박스 초기값 설정
+    const sequentialToggle = container.querySelector('#sequential-toggle');
+    if (sequentialToggle) {
+      if (this.sequentialExecution) {
+        sequentialToggle.setAttribute('checked', 'checked');
+      } else {
+        sequentialToggle.removeAttribute('checked');
+      }
+      sequentialToggle.checked = this.sequentialExecution;
+    }
+    
+    // 타이머 개수 선택기 초기값 설정
+    const timerCountSelect = container.querySelector('#timer-count-select');
+    if (timerCountSelect) {
+      timerCountSelect.value = this.currentTimerCount;
+    }
+    
+    // 최대 시간 선택기 초기값 설정
+    const maxTimeSelect = container.querySelector('#max-time-select');
+    if (maxTimeSelect) {
+      maxTimeSelect.value = this.currentMaxTime;
+    }
+    
+    // UI 모드 선택기 초기값 설정
+    const uiModeSelect = container.querySelector('#ui-mode-select');
+    if (uiModeSelect) {
+      uiModeSelect.value = this.uiMode;
+    }
+    
+    // 라벨 입력 필드들 초기값 설정
+    const labelInputs = container.querySelectorAll('.label-input');
+    labelInputs.forEach((input, index) => {
+      const originalInput = this.domElements.labelInputs[index];
+      if (originalInput) {
+        input.value = originalInput.value;
+      }
+    });
   }
 
   /**
@@ -1881,9 +2008,10 @@ class MultiTimer {
     const timerCountSelect = container.querySelector('#timer-count-select');
     if (timerCountSelect) {
       timerCountSelect.addEventListener('change', (e) => {
-        this.currentTimerCount = parseInt(e.target.value);
-        this.createTimers();
-        this.saveSettings();
+        const newCount = parseInt(e.target.value);
+        if (this.validateTimerCount(newCount)) {
+          this.changeTimerCount(newCount);
+        }
       });
     }
 
@@ -1892,6 +2020,12 @@ class MultiTimer {
     if (maxTimeSelect) {
       maxTimeSelect.addEventListener('change', (e) => {
         this.currentMaxTime = parseInt(e.target.value);
+        // 원본 선택기도 동기화
+        if (this.domElements.maxTimeSelect) {
+          this.domElements.maxTimeSelect.value = this.currentMaxTime;
+        }
+        // 최대 시간 변경 시 모든 타이머 초기화
+        this.resetAllTimersToZero();
         this.saveSettings();
       });
     }
@@ -1900,7 +2034,7 @@ class MultiTimer {
     const applyGlobalBtn = container.querySelector('#apply-global-time-btn');
     if (applyGlobalBtn) {
       applyGlobalBtn.addEventListener('click', () => {
-        this.applyGlobalTime();
+        this.applyGlobalTimeFromMobile(container);
       });
     }
 
@@ -1925,6 +2059,10 @@ class MultiTimer {
     if (uiModeSelect) {
       uiModeSelect.addEventListener('change', (e) => {
         this.uiMode = e.target.value;
+        // 원본 선택기도 동기화
+        if (this.domElements.uiModeSelect) {
+          this.domElements.uiModeSelect.value = this.uiMode;
+        }
         this.applyUIMode();
         this.saveSettings();
       });
@@ -1935,6 +2073,10 @@ class MultiTimer {
     if (autoStartToggle) {
       autoStartToggle.addEventListener('change', (e) => {
         this.autoStartEnabled = e.target.checked;
+        // 원본 체크박스도 동기화
+        if (this.domElements.autoStartToggle) {
+          this.domElements.autoStartToggle.checked = e.target.checked;
+        }
         this.saveSettings();
       });
     }
@@ -1944,6 +2086,10 @@ class MultiTimer {
     if (sequentialToggle) {
       sequentialToggle.addEventListener('change', (e) => {
         this.sequentialExecution = e.target.checked;
+        // 원본 체크박스도 동기화
+        if (this.domElements.sequentialToggle) {
+          this.domElements.sequentialToggle.checked = e.target.checked;
+        }
         this.updateStartAllButtonText();
         this.saveSettings();
       });
@@ -1953,10 +2099,7 @@ class MultiTimer {
     const labelInputs = container.querySelectorAll('.label-input');
     labelInputs.forEach((input, index) => {
       input.addEventListener('input', (e) => {
-        const labelText = this.domElements.labelTexts[index];
-        if (labelText) {
-          labelText.textContent = e.target.value || `타이머 ${index + 1}`;
-        }
+        this.updateTimerLabelFromMobile(index, e.target.value);
         this.saveSettings();
       });
     });
