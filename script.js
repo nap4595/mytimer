@@ -1760,31 +1760,79 @@ class MultiTimer {
   }
 
   /**
-   * 모바일 설정 패널 토글 (슬라이드)
+   * 모바일 설정 패널 토글 (중복 제거된 통합 패널)
    */
   toggleMobileSettings() {
-    const panels = document.querySelectorAll('.left-panel, .right-panel');
-    const isVisible = panels[0] && panels[0].style.display !== 'none';
+    let mobilePanel = document.getElementById('mobile-settings-panel');
     
-    panels.forEach(panel => {
-      if (isVisible) {
-        panel.style.display = 'none';
-      } else {
-        panel.style.display = 'block';
-        panel.style.position = 'fixed';
-        panel.style.top = '40px';
-        panel.style.right = '0';
-        panel.style.width = '85%';
-        panel.style.height = 'calc(100vh - 100px)';
-        panel.style.zIndex = '200';
-        panel.style.boxShadow = '-4px 0 8px rgba(0,0,0,0.3)';
-        panel.style.transform = 'translateX(0)';
-        panel.style.transition = 'transform 0.3s ease';
-      }
+    if (mobilePanel) {
+      // 기존 패널이 있으면 제거
+      mobilePanel.remove();
+      this.toggleMobileOverlay(false);
+      return;
+    }
+
+    // 새로운 통합 설정 패널 생성
+    mobilePanel = document.createElement('div');
+    mobilePanel.id = 'mobile-settings-panel';
+    mobilePanel.className = 'mobile-settings-panel';
+    
+    // 패널 스타일 설정
+    Object.assign(mobilePanel.style, {
+      position: 'fixed',
+      top: '40px',
+      right: '0',
+      width: '85%',
+      height: 'calc(100dvh - 100px)',
+      zIndex: '200',
+      backgroundColor: 'var(--panel-bg)',
+      boxShadow: '-4px 0 8px rgba(0,0,0,0.3)',
+      transform: 'translateX(0)',
+      transition: 'transform 0.3s ease',
+      overflowY: 'auto',
+      padding: '20px 15px'
     });
     
-    // 오버레이 배경
-    this.toggleMobileOverlay(!isVisible);
+    // dvh 미지원 브라우저 폴백
+    if (!CSS.supports('height', '100dvh')) {
+      mobilePanel.style.height = 'calc(100vh - 100px)';
+    }
+
+    // 설정 내용 구성 (중복 제거)
+    this.createMobileSettingsContent(mobilePanel);
+    
+    // 패널을 body에 추가
+    document.body.appendChild(mobilePanel);
+    
+    // 오버레이 배경 표시
+    this.toggleMobileOverlay(true);
+  }
+
+  /**
+   * 모바일 설정 패널 내용 생성 (중복 제거)
+   */
+  createMobileSettingsContent(container) {
+    const leftPanel = document.querySelector('.left-panel');
+    const rightPanel = document.querySelector('.right-panel');
+    
+    // 왼쪽 패널에서 전체 제어 섹션 제외하고 복사 (중복 제거)
+    const leftSections = leftPanel.querySelectorAll('.panel-section:not(:first-child)');
+    leftSections.forEach(section => {
+      const clonedSection = section.cloneNode(true);
+      clonedSection.classList.add('mobile-settings-section');
+      container.appendChild(clonedSection);
+    });
+    
+    // 오른쪽 패널 전체 복사
+    const rightSections = rightPanel.querySelectorAll('.panel-section');
+    rightSections.forEach(section => {
+      const clonedSection = section.cloneNode(true);
+      clonedSection.classList.add('mobile-settings-section');
+      container.appendChild(clonedSection);
+    });
+    
+    // 복사된 요소들의 이벤트 리스너 재연결
+    this.rebindMobileSettingsEvents(container);
   }
 
   /**
@@ -1813,6 +1861,95 @@ class MultiTimer {
     } else if (!show && overlay) {
       overlay.remove();
     }
+  }
+
+  /**
+   * 모바일 설정 패널의 이벤트 리스너 재연결
+   */
+  rebindMobileSettingsEvents(container) {
+    // 타이머 개수 선택기
+    const timerCountSelect = container.querySelector('#timer-count-select');
+    if (timerCountSelect) {
+      timerCountSelect.addEventListener('change', (e) => {
+        this.currentTimerCount = parseInt(e.target.value);
+        this.createTimers();
+        this.saveSettings();
+      });
+    }
+
+    // 최대 시간 선택기
+    const maxTimeSelect = container.querySelector('#max-time-select');
+    if (maxTimeSelect) {
+      maxTimeSelect.addEventListener('change', (e) => {
+        this.currentMaxTime = parseInt(e.target.value);
+        this.saveSettings();
+      });
+    }
+
+    // 전체 타이머 시간 적용 버튼
+    const applyGlobalBtn = container.querySelector('#apply-global-time-btn');
+    if (applyGlobalBtn) {
+      applyGlobalBtn.addEventListener('click', () => {
+        this.applyGlobalTime();
+      });
+    }
+
+    // 테마 선택 버튼
+    const themeBtn = container.querySelector('#theme-select-btn');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        this.openThemeModal();
+      });
+    }
+
+    // 종료음 선택 버튼
+    const soundBtn = container.querySelector('#sound-select-btn');
+    if (soundBtn) {
+      soundBtn.addEventListener('click', () => {
+        this.openSoundModal();
+      });
+    }
+
+    // UI 모드 선택기
+    const uiModeSelect = container.querySelector('#ui-mode-select');
+    if (uiModeSelect) {
+      uiModeSelect.addEventListener('change', (e) => {
+        this.uiMode = e.target.value;
+        this.applyUIMode();
+        this.saveSettings();
+      });
+    }
+
+    // 자동 시작 토글
+    const autoStartToggle = container.querySelector('#auto-start-toggle');
+    if (autoStartToggle) {
+      autoStartToggle.addEventListener('change', (e) => {
+        this.autoStartEnabled = e.target.checked;
+        this.saveSettings();
+      });
+    }
+
+    // 순차적 실행 토글
+    const sequentialToggle = container.querySelector('#sequential-toggle');
+    if (sequentialToggle) {
+      sequentialToggle.addEventListener('change', (e) => {
+        this.sequentialExecution = e.target.checked;
+        this.updateStartAllButtonText();
+        this.saveSettings();
+      });
+    }
+
+    // 라벨 입력 필드들
+    const labelInputs = container.querySelectorAll('.label-input');
+    labelInputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        const labelText = this.domElements.labelTexts[index];
+        if (labelText) {
+          labelText.textContent = e.target.value || `타이머 ${index + 1}`;
+        }
+        this.saveSettings();
+      });
+    });
   }
 
   /**

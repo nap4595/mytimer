@@ -247,7 +247,8 @@ body {
 /* 메인 앱 컨테이너 */
 .app-container {
   display: flex;
-  height: 100vh;
+  height: 100dvh; /* Dynamic Viewport Height - 모바일 브라우저 UI 변화 대응 */
+  height: 100vh;  /* 폴백: dvh 미지원 브라우저용 */
   width: 100vw;
 }
 
@@ -1085,7 +1086,8 @@ body {
 
 .desktop-device .timer-area {
   width: 70%;
-  height: 100vh;
+  height: 100dvh; /* Dynamic Viewport Height - 모바일 브라우저 UI 변화 대응 */
+  height: 100vh;  /* 폴백: dvh 미지원 브라우저용 */
   padding-bottom: var(--timer-gap);
 }
 
@@ -1142,7 +1144,8 @@ body {
 /* 모바일에서 타이머 영역 전체 사용 */
 .mobile-device .timer-area {
   width: 100%;
-  height: calc(100vh - 100px); /* 상단 40px + 하단 60px 제외 */
+  height: calc(100dvh - 100px); /* Dynamic Viewport - 상단 40px + 하단 60px 제외 */
+  height: calc(100vh - 100px);  /* 폴백: dvh 미지원 브라우저용 */
   padding-bottom: 0; /* 하단 여백 제거 */
 }
 
@@ -1189,9 +1192,33 @@ body {
   
   .timer-area {
     width: 100%;
-    height: calc(100vh - 100px);
+    height: calc(100dvh - 100px); /* Dynamic Viewport - 상단 40px + 하단 60px 제외 */
+    height: calc(100vh - 100px);  /* 폴백: dvh 미지원 브라우저용 */
     padding-bottom: 0;
   }
+}
+
+/* 모바일 설정 패널 스타일 */
+.mobile-settings-panel {
+  font-family: inherit;
+}
+
+.mobile-settings-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mobile-settings-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.mobile-settings-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-color);
 }
 
 /* 모바일에서 타이머 컨테이너 - 클래스 기반 */
