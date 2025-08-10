@@ -1766,9 +1766,15 @@ class MultiTimer {
     let mobilePanel = document.getElementById('mobile-settings-panel');
     
     if (mobilePanel) {
-      // 기존 패널이 있으면 제거
+      // 기존 패널이 있으면 제거하고 원본 패널들 복원
       mobilePanel.remove();
       this.toggleMobileOverlay(false);
+      
+      // 원본 패널들 다시 표시
+      const leftPanel = document.querySelector('.left-panel');
+      const rightPanel = document.querySelector('.right-panel');
+      leftPanel.style.display = '';
+      rightPanel.style.display = '';
       return;
     }
 
@@ -1777,13 +1783,13 @@ class MultiTimer {
     mobilePanel.id = 'mobile-settings-panel';
     mobilePanel.className = 'mobile-settings-panel';
     
-    // 패널 스타일 설정
+    // 패널 스타일 설정 (폴백 먼저, dvh 나중에)
     Object.assign(mobilePanel.style, {
       position: 'fixed',
       top: '40px',
       right: '0',
       width: '85%',
-      height: 'calc(100dvh - 100px)',
+      height: 'calc(100vh - 100px)',  // 폴백: 모든 브라우저 지원
       zIndex: '200',
       backgroundColor: 'var(--panel-bg)',
       boxShadow: '-4px 0 8px rgba(0,0,0,0.3)',
@@ -1793,9 +1799,9 @@ class MultiTimer {
       padding: '20px 15px'
     });
     
-    // dvh 미지원 브라우저 폴백
-    if (!CSS.supports('height', '100dvh')) {
-      mobilePanel.style.height = 'calc(100vh - 100px)';
+    // dvh 지원 브라우저에서 덮어쓰기
+    if (CSS.supports('height', '100dvh')) {
+      mobilePanel.style.height = 'calc(100dvh - 100px)';
     }
 
     // 설정 내용 구성 (중복 제거)
@@ -1809,11 +1815,15 @@ class MultiTimer {
   }
 
   /**
-   * 모바일 설정 패널 내용 생성 (중복 제거)
+   * 모바일 설정 패널 내용 생성 (ID 충돌 해결)
    */
   createMobileSettingsContent(container) {
     const leftPanel = document.querySelector('.left-panel');
     const rightPanel = document.querySelector('.right-panel');
+    
+    // 원본 패널들을 일시적으로 숨겨서 ID 충돌 방지
+    leftPanel.style.display = 'none';
+    rightPanel.style.display = 'none';
     
     // 왼쪽 패널에서 전체 제어 섹션 제외하고 복사 (중복 제거)
     const leftSections = leftPanel.querySelectorAll('.panel-section:not(:first-child)');
