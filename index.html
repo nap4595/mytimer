@@ -123,16 +123,6 @@
             </div>
 
             <div class="panel-section">
-                <h3>UI 모드</h3>
-                <label for="ui-mode-select" class="sr-only">UI 모드 선택</label>
-                <select id="ui-mode-select" class="ui-mode-selector" aria-label="UI 모드 선택">
-                    <option value="auto" selected>자동 감지</option>
-                    <option value="mobile">모바일 모드</option>
-                    <option value="desktop">데스크탑 모드</option>
-                </select>
-            </div>
-
-            <div class="panel-section">
                 <h3>고급 설정</h3>
                 <div class="auto-start-setting">
                     <label class="auto-start-label" for="auto-start-toggle">
@@ -149,6 +139,14 @@
                         순차적 실행
                     </label>
                     <div id="sequential-desc" class="sr-only">한 타이머 종료 시 자동으로 다음 타이머 시작</div>
+                </div>
+                <div class="segmented-animation-setting">
+                    <label class="segmented-animation-label" for="segmented-animation-toggle">
+                        <input type="checkbox" id="segmented-animation-toggle" aria-describedby="segmented-animation-desc">
+                        <span class="checkmark" aria-hidden="true"></span>
+                        분할 애니메이션
+                    </label>
+                    <div id="segmented-animation-desc" class="sr-only">타이머 막대를 초 단위로 분할하여 표시</div>
                 </div>
             </div>
 

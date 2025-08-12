@@ -612,13 +612,6 @@ class MultiTimer {
 
   // 오른쪽 패널 컨트롤 바인딩
   bindRightPanelControls() {
-    // UI 모드 선택기
-    if (this.domElements.uiModeSelect) {
-      this.domElements.uiModeSelect.addEventListener('change', (e) => {
-        this.setUIMode(e.target.value);
-      }, { signal: this.abortController.signal });
-    }
-
     // 순차적 실행 토글
     if (this.domElements.sequentialToggle) {
       this.domElements.sequentialToggle.addEventListener('change', (e) => {
@@ -905,6 +898,9 @@ class MultiTimer {
     
     // 깜빡임 효과 중지
     this.stopBlinkEffect(timerId);
+
+    // 타이머 바 다시 그리기
+    this.createTimerSegments(timerId);
     
     this.updateTimerDisplay(timerId);
     this.updateTimerBar(timerId);
@@ -1105,6 +1101,7 @@ class MultiTimer {
     timer.startTime = null;
     timer.expectedTime = null;
     this.stopBlinkEffect(timerId);
+    this.createTimerSegments(timerId);
     this.updateTimerDisplay(timerId);
     this.updateTimerBar(timerId);
     this.updateTimerButton(timerId);
@@ -1128,6 +1125,7 @@ class MultiTimer {
       timer.startTime = null;
       timer.expectedTime = null;
       this.stopBlinkEffect(index);
+      this.createTimerSegments(index);
       this.updateTimerDisplay(index);
       this.updateTimerBar(index);
       this.updateTimerButton(index);
@@ -1432,16 +1430,39 @@ class MultiTimer {
   updateTimerBar(timerId) {
     if (!this.isValidTimerId(timerId)) return;
 
-    const timer = this.timers[timerId];
-    const timerFill = this.domElements.timerFills[timerId];
+    if (this.segmentedAnimation) {
+      const timer = this.timers[timerId];
+      const timerBar = this.domElements.timerBars[timerId];
+      if (!timerBar) return;
 
-    if (!timerFill) {
-      console.warn(`Timer fill element not found for timer ${timerId}`);
-      return;
+      const wrapper = timerBar.querySelector('.segment-wrapper');
+      if (!wrapper) return;
+
+      const segments = wrapper.querySelectorAll('.timer-segment');
+      if (segments.length === 0) return;
+
+      const segmentsToHide = timer.totalTime - timer.currentTime;
+
+    for (let i = 0; i < segments.length; i++) {
+        if (i < segmentsToHide) {
+            segments[i].classList.add('hide');
+        } else {
+            segments[i].classList.remove('hide');
+        }
     }
+    } else {
+      const timer = this.timers[timerId];
+      const timerFill = this.domElements.timerFills[timerId];
 
-    const percentage = this.calculateBarPercentage(timer);
-    timerFill.style.height = `${Math.max(0, Math.min(100, percentage))}%`;
+      if (!timerFill) {
+        // 분할 애니메이션이 아닐 때는 timerFill이 있어야 함
+        // console.warn(`Timer fill element not found for timer ${timerId}`);
+        return;
+      }
+
+      const percentage = this.calculateBarPercentage(timer);
+      timerFill.style.height = `${Math.max(0, Math.min(100, percentage))}%`;
+    }
   }
 
   /**
@@ -1735,10 +1756,6 @@ class MultiTimer {
    * @returns {boolean} 모바일 디바이스 여부
    */
   isMobileDevice() {
-    // 사용자 강제 설정이 있는 경우 우선 적용
-    if (this.uiMode === 'mobile') return true;
-    if (this.uiMode === 'desktop') return false;
-    
     // User Agent 기반 감지
     const userAgent = navigator.userAgent.toLowerCase();
     const mobileKeywords = ['android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone', 'mobile'];
@@ -1795,35 +1812,12 @@ class MultiTimer {
   }
 
   /**
-   * UI 모드 수동 전환
-   * @param {string} mode - 'auto', 'mobile', 'desktop'
-   */
-  setUIMode(mode) {
-    this.uiMode = mode;
-    this.applyDeviceClass();
-    this.saveSettings();
-    
-    // 설정 변경 피드백
-    const modeNames = {
-      'auto': '자동 감지',
-      'mobile': '모바일 모드',
-      'desktop': '데스크탑 모드'
-    };
-    
-    CONFIG_UTILS.debugLog(`UI 모드 변경: ${modeNames[mode]}`);
-  }
-
-  /**
    * 화면 크기/방향 변경 감지 및 재평가
    */
   handleViewportChange() {
     // 자동 모드에서만 재평가
-    if (this.uiMode === 'auto') {
-      setTimeout(() => {
-        this.applyDeviceClass();
-        this.updateMobileTimerCount(); // 모바일 UI 업데이트
-      }, 100); // 방향 변경 완료 대기
-    }
+    this.applyDeviceClass();
+    this.updateMobileTimerCount(); // 모바일 UI 업데이트
   }
 
   // 모바일 전용 기능들
@@ -2106,20 +2100,6 @@ class MultiTimer {
       });
     }
 
-    // UI 모드 선택기
-    const uiModeSelect = container.querySelector('#ui-mode-select');
-    if (uiModeSelect) {
-      uiModeSelect.addEventListener('change', (e) => {
-        this.uiMode = e.target.value;
-        // 원본 선택기도 동기화
-        if (this.domElements.uiModeSelect) {
-          this.domElements.uiModeSelect.value = this.uiMode;
-        }
-        this.applyUIMode();
-        this.saveSettings();
-      });
-    }
-
     // 자동 시작 토글 (ID 중복 문제 해결을 위해 click 이벤트로 변경)
     const autoStartLabel = container.querySelector('.auto-start-label');
     if (autoStartLabel) {
@@ -2167,6 +2147,31 @@ class MultiTimer {
         this.saveSettings();
       });
     });
+
+    // 분할 애니메이션 토글 (ID 중복 문제 해결을 위해 click 이벤트로 변경)
+    const segmentedAnimationLabel = container.querySelector('.segmented-animation-label');
+    if (segmentedAnimationLabel) {
+      const segmentedAnimationToggle = segmentedAnimationLabel.querySelector('input[type="checkbox"]');
+      segmentedAnimationLabel.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const newState = !segmentedAnimationToggle.checked;
+        segmentedAnimationToggle.checked = newState;
+        this.segmentedAnimation = newState;
+
+        if (this.domElements.segmentedAnimationToggle) {
+          this.domElements.segmentedAnimationToggle.checked = newState;
+        }
+
+        // Re-render timers
+        this.timers.forEach((timer, index) => {
+            this.updateTimerTime(index, timer.totalTime);
+        });
+
+        this.saveSettings();
+      });
+    }
   }
 
   /**
@@ -2479,19 +2484,19 @@ class MultiTimer {
         }
         
         // 모바일 관련 설정 로드
-        if (settings.uiMode !== undefined) {
-          this.uiMode = settings.uiMode;
-          if (this.domElements.uiModeSelect) {
-            this.domElements.uiModeSelect.value = this.uiMode;
-          }
-        }
-        
         if (settings.audioEnabled !== undefined) {
           this.audioEnabled = settings.audioEnabled;
         }
         
         if (settings.vibrationEnabled !== undefined) {
           this.vibrationEnabled = settings.vibrationEnabled;
+        }
+
+        if (settings.segmentedAnimation !== undefined) {
+          this.segmentedAnimation = settings.segmentedAnimation;
+          if (this.domElements.segmentedAnimationToggle) {
+            this.domElements.segmentedAnimationToggle.checked = this.segmentedAnimation;
+          }
         }
         
         CONFIG_UTILS.debugLog('Settings loaded successfully', settings);
@@ -2511,9 +2516,9 @@ class MultiTimer {
         autoStartEnabled: this.autoStartEnabled,
         selectedSound: this.selectedSound,
         // 모바일 관련 설정 저장
-        uiMode: this.uiMode,
         audioEnabled: this.audioEnabled,
-        vibrationEnabled: this.vibrationEnabled
+        vibrationEnabled: this.vibrationEnabled,
+        segmentedAnimation: this.segmentedAnimation
       };
       
       localStorage.setItem(CONFIG.STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(settings));

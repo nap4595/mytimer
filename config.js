@@ -182,7 +182,8 @@ const CONFIG = {
     SELECTED_SOUND: 'TIMER_1', // 선택된 종료음
     DYNAMIC_TIMER_COUNT: true, // 동적 타이머 개수 변경 허용
     CURRENT_THEME: 'COLOR', // 현재 선택된 테마 ('COLOR' 또는 'MINIMAL')
-    SEQUENTIAL_EXECUTION: false // 순차적 실행 기본값
+    SEQUENTIAL_EXECUTION: false, // 순차적 실행 기본값
+    SEGMENTED_ANIMATION: false // 분할 애니메이션 기본값
   },
 
   // 시간 형식 설정
