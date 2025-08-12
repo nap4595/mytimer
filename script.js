@@ -1108,6 +1108,9 @@ class MultiTimer {
     timer.startTime = null;
     timer.expectedTime = null;
     this.stopBlinkEffect(timerId);
+
+    this.createTimerSegments(timerId);
+
     this.updateTimerDisplay(timerId);
     this.updateTimerBar(timerId);
     this.updateTimerButton(timerId);
@@ -1131,6 +1134,9 @@ class MultiTimer {
       timer.startTime = null;
       timer.expectedTime = null;
       this.stopBlinkEffect(index);
+
+      this.createTimerSegments(index);
+
       this.updateTimerDisplay(index);
       this.updateTimerBar(index);
       this.updateTimerButton(index);
