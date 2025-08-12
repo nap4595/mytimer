@@ -2068,27 +2068,39 @@ class MultiTimer {
       });
     }
 
-    // 자동 시작 토글
-    const autoStartToggle = container.querySelector('#auto-start-toggle');
-    if (autoStartToggle) {
-      autoStartToggle.addEventListener('change', (e) => {
-        this.autoStartEnabled = e.target.checked;
-        // 원본 체크박스도 동기화
+    // 자동 시작 토글 (ID 중복 문제 해결을 위해 click 이벤트로 변경)
+    const autoStartLabel = container.querySelector('.auto-start-label');
+    if (autoStartLabel) {
+      const autoStartToggle = autoStartLabel.querySelector('input[type="checkbox"]');
+      autoStartLabel.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const newState = !autoStartToggle.checked;
+        autoStartToggle.checked = newState;
+        this.autoStartEnabled = newState;
+
         if (this.domElements.autoStartToggle) {
-          this.domElements.autoStartToggle.checked = e.target.checked;
+          this.domElements.autoStartToggle.checked = newState;
         }
         this.saveSettings();
       });
     }
 
-    // 순차적 실행 토글
-    const sequentialToggle = container.querySelector('#sequential-toggle');
-    if (sequentialToggle) {
-      sequentialToggle.addEventListener('change', (e) => {
-        this.sequentialExecution = e.target.checked;
-        // 원본 체크박스도 동기화
+    // 순차적 실행 토글 (ID 중복 문제 해결을 위해 click 이벤트로 변경)
+    const sequentialLabel = container.querySelector('.sequential-label');
+    if (sequentialLabel) {
+      const sequentialToggle = sequentialLabel.querySelector('input[type="checkbox"]');
+      sequentialLabel.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const newState = !sequentialToggle.checked;
+        sequentialToggle.checked = newState;
+        this.sequentialExecution = newState;
+
         if (this.domElements.sequentialToggle) {
-          this.domElements.sequentialToggle.checked = e.target.checked;
+          this.domElements.sequentialToggle.checked = newState;
         }
         this.updateStartAllButtonText();
         this.saveSettings();
