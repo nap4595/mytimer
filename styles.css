@@ -648,6 +648,13 @@ body {
   font-weight: bold;
 }
 
+/* 활성 상태 (클릭/터치 피드백) */
+.auto-start-label:active .checkmark,
+.sequential-label:active .checkmark {
+  transform: scale(0.9);
+  background-color: var(--hover-bg);
+}
+
 /* 최대 시간 선택기 */
 .max-time-selector {
   width: 100%;
