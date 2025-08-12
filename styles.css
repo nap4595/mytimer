@@ -392,6 +392,22 @@ body {
   transform: translateZ(0); /* 하드웨어 가속 */
 }
 
+/* 타이머 세그먼트 */
+.timer-segment {
+  flex-grow: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease-out;
+  opacity: 1;
+  transform: scaleY(1);
+  transform-origin: bottom;
+}
+
+.timer-segment.hide {
+  opacity: 0;
+  transform: scaleY(0);
+  height: 0;
+}
+
 /* 타이머별 색상 설정 - 동적 색상 지원 */
 .timer-row[data-timer-id="0"] .timer-fill { background-color: var(--timer-1-color); }
 .timer-row[data-timer-id="1"] .timer-fill { background-color: var(--timer-2-color); }

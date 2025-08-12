@@ -49,6 +49,7 @@ class MultiTimer {
     this.selectedSound = CONFIG.FEATURES.SELECTED_SOUND; // frozen CONFIG 대신 별도 상태로 관리
     this.currentTheme = CONFIG.FEATURES.CURRENT_THEME; // 현재 테마 상태 관리
     this.sequentialExecution = CONFIG.FEATURES.SEQUENTIAL_EXECUTION; // 순차적 실행 상태 관리
+    this.segmentedAnimation = CONFIG.FEATURES.SEGMENTED_ANIMATION; // 분할 애니메이션 상태 관리
     
     // 모바일 전용 설정 상태
     this.audioEnabled = true; // 음향 상태
@@ -103,6 +104,7 @@ class MultiTimer {
       // 자동 시작 및 순차적 실행 설정 요소들
       autoStartToggle: null,
       sequentialToggle: null,
+      segmentedAnimationToggle: null,
       // 모바일 전용 요소들
       mobileTimerCount: null,
       mobileAudioToggle: null,
@@ -193,7 +195,6 @@ class MultiTimer {
       </div>
       <div class="timer-bar-container">
         <div class="timer-bar" data-color="${color}">
-          <div class="timer-fill"></div>
         </div>
         <div class="time-display">
           <span class="time-text">00:00</span>
@@ -208,10 +209,6 @@ class MultiTimer {
         </button>
       </div>
     `;
-    
-    // 타이머 색상 동적 적용
-    const timerFill = timerRow.querySelector('.timer-fill');
-    timerFill.style.backgroundColor = color;
     
     return timerRow;
   }
@@ -232,6 +229,44 @@ class MultiTimer {
     input.value = CONFIG_UTILS.getTimerLabel(index);
     
     return input;
+  }
+
+  /**
+   * 타이머 세그먼트 또는 채우기 요소 생성
+   * @param {number} timerId - 타이머 인덱스
+   * @private
+   */
+  createTimerSegments(timerId) {
+    const timerBar = this.domElements.timerBars[timerId];
+    if (!timerBar) return;
+
+    // 기존 내용 지우기
+    timerBar.innerHTML = '';
+
+    if (this.segmentedAnimation) {
+      const timer = this.timers[timerId];
+      if (timer.totalTime === 0) return;
+
+      const color = CONFIG_UTILS.getTimerColor(timerId, this.currentTheme);
+      const fragment = document.createDocumentFragment();
+
+      for (let i = 0; i < timer.totalTime; i++) {
+        const segment = document.createElement('div');
+        segment.className = 'timer-segment';
+        segment.style.backgroundColor = color;
+        fragment.appendChild(segment);
+      }
+      timerBar.appendChild(fragment);
+    } else {
+      const timerFill = document.createElement('div');
+      timerFill.className = 'timer-fill';
+      const color = CONFIG_UTILS.getTimerColor(timerId, this.currentTheme);
+      timerFill.style.backgroundColor = color;
+      timerBar.appendChild(timerFill);
+
+      // 새로 생성된 timer-fill 요소를 캐싱
+      this.domElements.timerFills[timerId] = timerFill;
+    }
   }
 
   /**
@@ -293,7 +328,6 @@ class MultiTimer {
         }
         
         this.domElements.timerRows[i] = timerRow;
-        this.domElements.timerFills[i] = timerRow.querySelector('.timer-fill');
         this.domElements.timeTexts[i] = timerRow.querySelector('.time-text');
         this.domElements.playButtons[i] = timerRow.querySelector('.play-pause-btn');
         this.domElements.labelTexts[i] = timerRow.querySelector('.label-text');
@@ -344,6 +378,7 @@ class MultiTimer {
       // 자동 시작 및 순차적 실행 설정 요소들 캐싱
       this.domElements.autoStartToggle = document.getElementById('auto-start-toggle');
       this.domElements.sequentialToggle = document.getElementById('sequential-toggle');
+      this.domElements.segmentedAnimationToggle = document.getElementById('segmented-animation-toggle');
       
       // UI 모드 선택기 캐싱
       this.domElements.uiModeSelect = document.getElementById('ui-mode-select');
@@ -585,6 +620,17 @@ class MultiTimer {
         this.updateStartAllButtonText();
         CONFIG_UTILS.debugLog(`Sequential execution ${this.sequentialExecution ? 'enabled' : 'disabled'}`);
       }, { signal: this.abortController.signal });
+    }
+
+    // 분할 애니메이션 토글
+    if (this.domElements.segmentedAnimationToggle) {
+        this.domElements.segmentedAnimationToggle.addEventListener('change', (e) => {
+            this.segmentedAnimation = e.target.checked;
+            this.timers.forEach((timer, index) => {
+                this.updateTimerTime(index, timer.totalTime);
+            });
+            CONFIG_UTILS.debugLog(`Segmented animation ${this.segmentedAnimation ? 'enabled' : 'disabled'}`);
+        }, { signal: this.abortController.signal });
     }
   }
 
@@ -853,6 +899,9 @@ class MultiTimer {
     
     // 깜빡임 효과 중지
     this.stopBlinkEffect(timerId);
+
+    // 타이머 바 다시 그리기
+    this.createTimerSegments(timerId);
     
     this.updateTimerDisplay(timerId);
     this.updateTimerBar(timerId);
@@ -1379,17 +1428,37 @@ class MultiTimer {
    */
   updateTimerBar(timerId) {
     if (!this.isValidTimerId(timerId)) return;
-    
-    const timer = this.timers[timerId];
-    const timerFill = this.domElements.timerFills[timerId];
-    
-    if (!timerFill) {
-      console.warn(`Timer fill element not found for timer ${timerId}`);
-      return;
+
+    if (this.segmentedAnimation) {
+      const timer = this.timers[timerId];
+      const timerBar = this.domElements.timerBars[timerId];
+      if (!timerBar) return;
+
+      const segments = timerBar.querySelectorAll('.timer-segment');
+      if (segments.length === 0) return;
+
+      const segmentsToHide = timer.totalTime - timer.currentTime;
+
+      segments.forEach((segment, index) => {
+        if (index < segmentsToHide) {
+          segment.classList.add('hide');
+        } else {
+          segment.classList.remove('hide');
+        }
+      });
+    } else {
+      const timer = this.timers[timerId];
+      const timerFill = this.domElements.timerFills[timerId];
+
+      if (!timerFill) {
+        // 분할 애니메이션이 아닐 때는 timerFill이 있어야 함
+        // console.warn(`Timer fill element not found for timer ${timerId}`);
+        return;
+      }
+
+      const percentage = this.calculateBarPercentage(timer);
+      timerFill.style.height = `${Math.max(0, Math.min(100, percentage))}%`;
     }
-    
-    const percentage = this.calculateBarPercentage(timer);
-    timerFill.style.height = `${Math.max(0, Math.min(100, percentage))}%`;
   }
 
   /**
@@ -2441,6 +2510,13 @@ class MultiTimer {
         if (settings.vibrationEnabled !== undefined) {
           this.vibrationEnabled = settings.vibrationEnabled;
         }
+
+        if (settings.segmentedAnimation !== undefined) {
+          this.segmentedAnimation = settings.segmentedAnimation;
+          if (this.domElements.segmentedAnimationToggle) {
+            this.domElements.segmentedAnimationToggle.checked = this.segmentedAnimation;
+          }
+        }
         
         CONFIG_UTILS.debugLog('Settings loaded successfully', settings);
       }
@@ -2461,7 +2537,8 @@ class MultiTimer {
         // 모바일 관련 설정 저장
         uiMode: this.uiMode,
         audioEnabled: this.audioEnabled,
-        vibrationEnabled: this.vibrationEnabled
+        vibrationEnabled: this.vibrationEnabled,
+        segmentedAnimation: this.segmentedAnimation
       };
       
       localStorage.setItem(CONFIG.STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(settings));
