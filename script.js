@@ -248,15 +248,21 @@ class MultiTimer {
       if (timer.totalTime === 0) return;
 
       const color = CONFIG_UTILS.getTimerColor(timerId, this.currentTheme);
-      const fragment = document.createDocumentFragment();
 
+      const wrapper = document.createElement('div');
+      wrapper.className = 'segment-wrapper';
+      const maxBarLength = (timer.totalTime / this.currentMaxTime) * 100;
+      wrapper.style.height = `${maxBarLength}%`;
+
+      const fragment = document.createDocumentFragment();
       for (let i = 0; i < timer.totalTime; i++) {
         const segment = document.createElement('div');
         segment.className = 'timer-segment';
         segment.style.backgroundColor = color;
         fragment.appendChild(segment);
       }
-      timerBar.appendChild(fragment);
+      wrapper.appendChild(fragment);
+      timerBar.appendChild(wrapper);
     } else {
       const timerFill = document.createElement('div');
       timerFill.className = 'timer-fill';
@@ -1434,7 +1440,10 @@ class MultiTimer {
       const timerBar = this.domElements.timerBars[timerId];
       if (!timerBar) return;
 
-      const segments = timerBar.querySelectorAll('.timer-segment');
+      const wrapper = timerBar.querySelector('.segment-wrapper');
+      if (!wrapper) return;
+
+      const segments = wrapper.querySelectorAll('.timer-segment');
       if (segments.length === 0) return;
 
       const segmentsToHide = timer.totalTime - timer.currentTime;
@@ -2184,6 +2193,31 @@ class MultiTimer {
         this.saveSettings();
       });
     });
+
+    // 분할 애니메이션 토글 (ID 중복 문제 해결을 위해 click 이벤트로 변경)
+    const segmentedAnimationLabel = container.querySelector('.segmented-animation-label');
+    if (segmentedAnimationLabel) {
+      const segmentedAnimationToggle = segmentedAnimationLabel.querySelector('input[type="checkbox"]');
+      segmentedAnimationLabel.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const newState = !segmentedAnimationToggle.checked;
+        segmentedAnimationToggle.checked = newState;
+        this.segmentedAnimation = newState;
+
+        if (this.domElements.segmentedAnimationToggle) {
+          this.domElements.segmentedAnimationToggle.checked = newState;
+        }
+
+        // Re-render timers
+        this.timers.forEach((timer, index) => {
+            this.updateTimerTime(index, timer.totalTime);
+        });
+
+        this.saveSettings();
+      });
+    }
   }
 
   /**
