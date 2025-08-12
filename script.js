@@ -508,12 +508,6 @@ class MultiTimer {
     document.getElementById('stop-all-btn').addEventListener('click', () => this.stopAllTimers());
     document.getElementById('reset-all-btn').addEventListener('click', () => this.resetAllTimers());
     
-    // 자동 시작 토글
-    document.getElementById('auto-start-toggle').addEventListener('change', (e) => {
-      this.autoStartEnabled = e.target.checked;
-      CONFIG_UTILS.debugLog(`Auto-start ${this.autoStartEnabled ? 'enabled' : 'disabled'}`);
-    });
-    
     // 최대 시간 설정
     document.getElementById('max-time-select').addEventListener('change', (e) => {
       this.currentMaxTime = parseInt(e.target.value);
@@ -610,33 +604,60 @@ class MultiTimer {
     });
   }
 
+  handleAdvancedToggle(e) {
+    const targetLabel = e.target.closest('label[data-action]');
+    if (!targetLabel) return;
+
+    e.preventDefault();
+    const action = targetLabel.dataset.action;
+    const checkbox = targetLabel.querySelector('input[type="checkbox"]');
+    if (!checkbox) return;
+
+    const newState = !checkbox.checked;
+
+    switch (action) {
+      case 'toggle-auto-start':
+        this.autoStartEnabled = newState;
+        CONFIG_UTILS.debugLog(`Auto-start ${newState ? 'enabled' : 'disabled'}`);
+        break;
+      case 'toggle-sequential':
+        this.sequentialExecution = newState;
+        this.updateStartAllButtonText();
+        CONFIG_UTILS.debugLog(`Sequential execution ${newState ? 'enabled' : 'disabled'}`);
+        break;
+      case 'toggle-segmented':
+        this.segmentedAnimation = newState;
+        this.timers.forEach((timer, index) => {
+          this.updateTimerTime(index, timer.totalTime);
+        });
+        CONFIG_UTILS.debugLog(`Segmented animation ${newState ? 'enabled' : 'disabled'}`);
+        break;
+    }
+
+    // 모든 관련 체크박스 상태를 한 번에 동기화
+    this.domElements.autoStartToggle.checked = this.autoStartEnabled;
+    this.domElements.sequentialToggle.checked = this.sequentialExecution;
+    this.domElements.segmentedAnimationToggle.checked = this.segmentedAnimation;
+
+    // 방금 클릭된 체크박스의 상태도 명시적으로 업데이트
+    checkbox.checked = newState;
+
+    this.saveSettings();
+  }
+
   // 오른쪽 패널 컨트롤 바인딩
-  bindRightPanelControls() {    
+  bindRightPanelControls() {
     // UI 모드 선택기
     if (this.domElements.uiModeSelect) {
       this.domElements.uiModeSelect.addEventListener('change', (e) => {
         this.setUIMode(e.target.value);
       }, { signal: this.abortController.signal });
     }
-    
-    // 순차적 실행 토글
-    if (this.domElements.sequentialToggle) {
-      this.domElements.sequentialToggle.addEventListener('change', (e) => {
-        this.sequentialExecution = e.target.checked;
-        this.updateStartAllButtonText();
-        CONFIG_UTILS.debugLog(`Sequential execution ${this.sequentialExecution ? 'enabled' : 'disabled'}`);
-      }, { signal: this.abortController.signal });
-    }
 
-    // 분할 애니메이션 토글
-    if (this.domElements.segmentedAnimationToggle) {
-        this.domElements.segmentedAnimationToggle.addEventListener('change', (e) => {
-            this.segmentedAnimation = e.target.checked;
-            this.timers.forEach((timer, index) => {
-                this.updateTimerTime(index, timer.totalTime);
-            });
-            CONFIG_UTILS.debugLog(`Segmented animation ${this.segmentedAnimation ? 'enabled' : 'disabled'}`);
-        }, { signal: this.abortController.signal });
+    // 고급 설정 토글에 대한 이벤트 위임
+    const advancedSettingsPanel = document.querySelector('.right-panel .advanced-settings-panel');
+    if (advancedSettingsPanel) {
+      advancedSettingsPanel.addEventListener('click', this.handleAdvancedToggle.bind(this));
     }
   }
 
@@ -909,9 +930,7 @@ class MultiTimer {
     // 타이머 바 다시 그리기
     this.createTimerSegments(timerId);
     
-    this.updateTimerDisplay(timerId);
-    this.updateTimerBar(timerId);
-    this.updateTimerButton(timerId);
+    this.renderTimer(timerId);
   }
 
   // 개별 타이머 토글
@@ -941,34 +960,31 @@ class MultiTimer {
     timer.expectedTime = timer.startTime + (timer.currentTime * 1000); // 예상 종료 시간
     
     const timerTick = () => {
-      if (!timer.isRunning) return;
+      const currentTimer = this.timers[timerId];
+      if (!currentTimer || !currentTimer.isRunning) {
+        clearInterval(this.intervalIds[timerId]);
+        this.intervalIds[timerId] = null;
+        return;
+      }
       
       const now = performance.now();
-      const elapsed = now - timer.startTime; // 실제 경과 시간 (ms)
-      const remainingMs = timer.expectedTime - now; // 남은 시간 (ms)
+      const remainingMs = currentTimer.expectedTime - now;
       
-      timer.currentTime = Math.max(0, Math.ceil(remainingMs / 1000)); // 초 단위로 변환
+      currentTimer.currentTime = Math.max(0, Math.ceil(remainingMs / 1000));
       
-      if (timer.currentTime <= 0) {
+      if (currentTimer.currentTime <= 0) {
         this.completeTimer(timerId);
       } else {
-        this.updateTimerDisplay(timerId);
-        this.updateTimerBar(timerId);
-        
-        // 다음 업데이트 시간 계산 (드리프트 보정)
-        const nextUpdate = Math.max(1, 1000 - (elapsed % 1000));
-        const timeoutId = setTimeout(timerTick, nextUpdate);
-        this.intervalIds[timerId] = timeoutId;
-        this.timeoutIds.add(timeoutId);
+        this.renderTimer(timerId);
       }
     };
+
+    if (this.intervalIds[timerId]) {
+        clearInterval(this.intervalIds[timerId]);
+    }
+    this.intervalIds[timerId] = setInterval(timerTick, 100);
     
-    // 첫 번째 틱 실행 (메모리 추적)
-    const timeoutId = setTimeout(timerTick, 100);
-    this.intervalIds[timerId] = timeoutId;
-    this.timeoutIds.add(timeoutId);
-    
-    this.updateTimerButton(timerId);
+    this.renderTimer(timerId);
     this.updateRunningCount();
     
     CONFIG_UTILS.debugLog(`Timer ${timerId} started with accurate timing`);
@@ -980,12 +996,11 @@ class MultiTimer {
     timer.isRunning = false;
     
     if (this.intervalIds[timerId]) {
-      clearTimeout(this.intervalIds[timerId]);
-      this.timeoutIds.delete(this.intervalIds[timerId]);
+      clearInterval(this.intervalIds[timerId]);
       this.intervalIds[timerId] = null;
     }
     
-    this.updateTimerButton(timerId);
+    this.renderTimer(timerId);
     this.updateRunningCount();
     
     CONFIG_UTILS.debugLog(`Timer ${timerId} stopped`);
@@ -1000,14 +1015,11 @@ class MultiTimer {
     timer.currentTime = 0;
     
     if (this.intervalIds[timerId]) {
-      clearTimeout(this.intervalIds[timerId]);
-      this.timeoutIds.delete(this.intervalIds[timerId]);
+      clearInterval(this.intervalIds[timerId]);
       this.intervalIds[timerId] = null;
     }
     
-    this.updateTimerDisplay(timerId);
-    this.updateTimerBar(timerId);
-    this.updateTimerButton(timerId);
+    this.renderTimer(timerId);
     this.updateRunningCount();
     
     // 알림 효과
@@ -1111,9 +1123,7 @@ class MultiTimer {
 
     this.createTimerSegments(timerId);
 
-    this.updateTimerDisplay(timerId);
-    this.updateTimerBar(timerId);
-    this.updateTimerButton(timerId);
+    this.renderTimer(timerId);
     this.updateRunningCount();
   }
 
@@ -1137,9 +1147,7 @@ class MultiTimer {
 
       this.createTimerSegments(index);
 
-      this.updateTimerDisplay(index);
-      this.updateTimerBar(index);
-      this.updateTimerButton(index);
+      this.renderTimer(index);
     });
     this.updateRunningCount();
   }
@@ -1403,6 +1411,17 @@ class MultiTimer {
 
   // UI 업데이트 메서드들
   /**
+   * 타이머의 모든 시각적 요소를 렌더링/업데이트합니다.
+   * @param {number} timerId - 타이머 ID
+   */
+  renderTimer(timerId) {
+    if (!this.isValidTimerId(timerId)) return;
+    this.updateTimerDisplay(timerId);
+    this.updateTimerBar(timerId);
+    this.updateTimerButton(timerId);
+  }
+
+  /**
    * 타이머 표시 업데이트 - 캐시된 DOM 요소 사용
    * @param {number} timerId - 타이머 ID
    */
@@ -1454,13 +1473,13 @@ class MultiTimer {
 
       const segmentsToHide = timer.totalTime - timer.currentTime;
 
-      segments.forEach((segment, index) => {
-        if (index < segmentsToHide) {
-          segment.classList.add('hide');
+    for (let i = 0; i < segments.length; i++) {
+        if (i < segmentsToHide) {
+            segments[i].classList.add('hide');
         } else {
-          segment.classList.remove('hide');
+            segments[i].classList.remove('hide');
         }
-      });
+    }
     } else {
       const timer = this.timers[timerId];
       const timerFill = this.domElements.timerFills[timerId];
@@ -2152,43 +2171,10 @@ class MultiTimer {
       });
     }
 
-    // 자동 시작 토글 (ID 중복 문제 해결을 위해 click 이벤트로 변경)
-    const autoStartLabel = container.querySelector('.auto-start-label');
-    if (autoStartLabel) {
-      const autoStartToggle = autoStartLabel.querySelector('input[type="checkbox"]');
-      autoStartLabel.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const newState = !autoStartToggle.checked;
-        autoStartToggle.checked = newState;
-        this.autoStartEnabled = newState;
-
-        if (this.domElements.autoStartToggle) {
-          this.domElements.autoStartToggle.checked = newState;
-        }
-        this.saveSettings();
-      });
-    }
-
-    // 순차적 실행 토글 (ID 중복 문제 해결을 위해 click 이벤트로 변경)
-    const sequentialLabel = container.querySelector('.sequential-label');
-    if (sequentialLabel) {
-      const sequentialToggle = sequentialLabel.querySelector('input[type="checkbox"]');
-      sequentialLabel.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const newState = !sequentialToggle.checked;
-        sequentialToggle.checked = newState;
-        this.sequentialExecution = newState;
-
-        if (this.domElements.sequentialToggle) {
-          this.domElements.sequentialToggle.checked = newState;
-        }
-        this.updateStartAllButtonText();
-        this.saveSettings();
-      });
+    // 고급 설정 패널에 이벤트 위임 적용
+    const advancedSettingsPanel = container.querySelector('.advanced-settings-panel');
+    if (advancedSettingsPanel) {
+        advancedSettingsPanel.addEventListener('click', this.handleAdvancedToggle.bind(this));
     }
 
     // 라벨 입력 필드들
@@ -2199,31 +2185,6 @@ class MultiTimer {
         this.saveSettings();
       });
     });
-
-    // 분할 애니메이션 토글 (ID 중복 문제 해결을 위해 click 이벤트로 변경)
-    const segmentedAnimationLabel = container.querySelector('.segmented-animation-label');
-    if (segmentedAnimationLabel) {
-      const segmentedAnimationToggle = segmentedAnimationLabel.querySelector('input[type="checkbox"]');
-      segmentedAnimationLabel.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const newState = !segmentedAnimationToggle.checked;
-        segmentedAnimationToggle.checked = newState;
-        this.segmentedAnimation = newState;
-
-        if (this.domElements.segmentedAnimationToggle) {
-          this.domElements.segmentedAnimationToggle.checked = newState;
-        }
-
-        // Re-render timers
-        this.timers.forEach((timer, index) => {
-            this.updateTimerTime(index, timer.totalTime);
-        });
-
-        this.saveSettings();
-      });
-    }
   }
 
   /**
