@@ -1,0 +1,250 @@
+/**
+ * Components
+ * @description Styles for shared, reusable UI components like modals, buttons, and notifications.
+ */
+
+/* Generic Control Button */
+.control-btn {
+  width: 100%;
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  border: none;
+  border-radius: var(--border-radius);
+  background-color: var(--secondary-color);
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  will-change: transform;
+}
+
+.control-btn:hover {
+  background-color: #5A6268;
+  transform: translateY(-1px);
+}
+
+.control-btn:active {
+  transform: translateY(0);
+}
+
+/* Themed Buttons */
+.start-btn { background-color: var(--success-color); }
+.start-btn:hover { background-color: #218838; }
+
+.stop-btn { background-color: var(--danger-color); }
+.stop-btn:hover { background-color: #C82333; }
+
+.reset-btn { background-color: var(--secondary-color); }
+.reset-btn:hover { background-color: #5A6268; }
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background-color: var(--panel-bg);
+  margin: 10% auto;
+  padding: 0;
+  border-radius: var(--border-radius-large);
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+  animation: slideIn 0.3s ease;
+}
+
+.modal-header {
+  padding: 20px 20px 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-light);
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: var(--text-color);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 0 20px 20px 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.modal-footer .control-btn {
+  width: auto;
+  padding: 10px 20px;
+  margin-bottom: 0;
+}
+
+/* Generic Input Group (used in modals) */
+.time-input-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.time-input-group label {
+  width: 60px;
+  font-weight: 500;
+}
+
+.time-input-group input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+/* Notification Toast */
+.notification-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: var(--border-radius);
+  color: white;
+  font-weight: 500;
+  z-index: 2000;
+  max-width: 300px;
+  box-shadow: var(--shadow-hover);
+  animation: slideInRight 0.3s ease;
+  role: alert;
+  aria-live: assertive;
+  border: 2px solid transparent;
+}
+
+.notification-toast.notification-error {
+  background-color: var(--danger-color);
+  border-color: #FFFFFF;
+}
+
+.notification-toast.notification-success {
+  background-color: var(--success-color);
+  border-color: #FFFFFF;
+}
+
+.notification-toast.notification-warning {
+  background-color: var(--warning-color);
+  color: var(--text-color);
+  border-color: #000000;
+  font-weight: bold;
+}
+
+.notification-toast.notification-info {
+  background-color: var(--info-color);
+  border-color: #FFFFFF;
+}
+
+.notification-close {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+}
+
+.notification-close:hover,
+.notification-close:focus {
+  opacity: 0.7;
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+/* Custom Checkbox (used in settings) */
+.auto-start-label,
+.sequential-label,
+.segmented-animation-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-color);
+  user-select: none;
+}
+
+.auto-start-label input[type="checkbox"],
+.sequential-label input[type="checkbox"],
+.segmented-animation-label input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-radius: 3px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  background-color: white;
+}
+
+.auto-start-label input[type="checkbox"]:checked + .checkmark {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.auto-start-label input[type="checkbox"]:checked + .checkmark::after,
+.segmented-animation-label input[type="checkbox"]:checked + .checkmark::after {
+  content: '✓';
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.sequential-label input[type="checkbox"]:checked + .checkmark {
+  background-color: var(--info-color);
+  border-color: var(--info-color);
+}
+
+.sequential-label input[type="checkbox"]:checked + .checkmark::after {
+  content: '⏭';
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+}

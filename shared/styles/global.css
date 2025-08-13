@@ -1,0 +1,156 @@
+/**
+ * Global Styles
+ * @description Base styles, layout variables, and accessibility rules for the entire platform.
+ */
+
+/* CSS Custom Properties - Layout & Animation */
+:root {
+  /* Layout */
+  --left-panel-width: 15%;
+  --timer-area-width: 70%;
+  --right-panel-width: 15%;
+  --container-gap: 8px;
+  --border-radius: 8px;
+  --border-radius-large: 12px;
+
+  /* Animation & Transition */
+  --transition-fast: 0.15s ease;
+  --transition-smooth: 0.3s ease;
+  --blink-duration: 1s;
+  --scale-hover: 1.05;
+  --scale-active: 0.95;
+}
+
+/* Basic Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Base Body Styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Main App Container */
+.app-container {
+  display: flex;
+  height: 100vh;  /* Fallback */
+  height: 100dvh; /* Dynamic Viewport Height */
+  width: 100vw;
+}
+
+/* Responsive Design Classes & Media Queries */
+.desktop-device .app-container {
+  flex-direction: row;
+  position: static;
+}
+
+.mobile-device .app-container {
+  flex-direction: column;
+  position: relative;
+}
+
+@media (max-width: 1024px) {
+  .left-panel, .right-panel { width: 18%; }
+  .timer-area { width: 64%; }
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    flex-direction: column;
+    position: relative;
+  }
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .timer-row.completed { /* This is timer-specific, but the rule is global */
+    animation: none !important;
+    opacity: 0.7;
+  }
+}
+
+/* High Contrast Support */
+@media (prefers-contrast: high) {
+  :root {
+    --border-color: #000000;
+    --text-light: #000000;
+    --shadow: 0 0 0 2px #000000;
+    --bg-color: #FFFFFF;
+    --panel-bg: #F5F5F5;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .timer-row { /* Also timer-specific, but a global rule */
+    border: 3px solid #000000;
+  }
+  .control-btn {
+    border: 2px solid #000000;
+    font-weight: bold;
+  }
+}
+
+/* Focus Indication */
+button:focus,
+input:focus,
+select:focus {
+  outline: 3px solid #007BFF;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px #ffffff, 0 0 0 4px #007BFF;
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Keyframes for Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
