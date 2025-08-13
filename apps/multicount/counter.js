@@ -81,17 +81,20 @@ class MultiCounter {
     const color = utils.getTimerColor(index, themeManager.getCurrentThemeName());
     const targetValue = this.counters[index].target !== null ? this.counters[index].target : '';
     return `
-      <div class="counter-card" data-index="${index}" style="border-left: 5px solid ${color};">
-        <input type="text" class="counter-label" value="${label}" placeholder="Label">
-        <div class="counter-value">${value}</div>
-        <div class="counter-target-container">
-            <label for="target-${index}">Target:</label>
-            <input type="number" id="target-${index}" class="counter-target" value="${targetValue}" placeholder="N/A">
-        </div>
-        <div class="counter-card-controls">
-          <button class="counter-btn decrease-btn">-</button>
-          <button class="counter-btn reset-btn">0</button>
-          <button class="counter-btn increase-btn">+</button>
+      <div class="counter-card" data-index="${index}">
+        <div class="counter-fill" style="background-color: ${color}33;"></div>
+        <div class="counter-content">
+            <input type="text" class="counter-label" value="${label}" placeholder="Label">
+            <div class="counter-value">${value}</div>
+            <div class="counter-target-container">
+                <label for="target-${index}">Target:</label>
+                <input type="number" id="target-${index}" class="counter-target" value="${targetValue}" placeholder="N/A">
+            </div>
+            <div class="counter-card-controls">
+              <button class="counter-btn decrease-btn">-</button>
+              <button class="counter-btn reset-btn">0</button>
+              <button class="counter-btn increase-btn">+</button>
+            </div>
         </div>
       </div>
     `;
@@ -116,12 +119,22 @@ class MultiCounter {
   updateCounterDOM(index) {
     const card = this.container.querySelector(`.counter-card[data-index="${index}"]`);
     if (card) {
-      card.querySelector('.counter-value').textContent = this.counters[index].value;
+      const counter = this.counters[index];
+      card.querySelector('.counter-value').textContent = counter.value;
+
+      const fill = card.querySelector('.counter-fill');
+      if (fill) {
+        const percentage = (counter.target && counter.target > 0) ? (counter.value / counter.target) * 100 : 0;
+        fill.style.height = `${Math.min(percentage, 100)}%`;
+      }
     }
   }
 
   resetAll() {
-      this.counters.forEach(counter => counter.value = 0);
+      this.counters.forEach(counter => {
+        counter.value = 0;
+        counter.target = null;
+      });
       this.renderCounters();
       this.saveState();
       showNotification('All counters have been reset.', 'info');
