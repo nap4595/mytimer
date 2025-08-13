@@ -11,7 +11,6 @@ export const CONFIG = {
     NAME: 'MultiUtilities',
     VERSION: '2.0.0',
     BASE_PATH: window.location.hostname === 'nap4595.github.io' ? '/mytimer' : ''
- main
   },
 
   // Routing Configuration
