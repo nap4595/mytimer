@@ -1,0 +1,84 @@
+/**
+ * MultiTimer App-Specific Styles (Minimal)
+ * @description Core visual components for a single timer.
+ */
+
+/* Timer Components */
+.timer-row {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--panel-bg);
+  border-radius: var(--border-radius-large);
+  padding: 0;
+  box-shadow: var(--shadow);
+  transition: all var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.timer-bar-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.timer-bar {
+  width: 100%;
+  height: 100%;
+  background-color: #E9ECEF;
+  border-radius: var(--border-radius-large);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.timer-fill {
+  width: 100%;
+  height: 0%;
+  background-color: var(--timer-1-color); /* Default color for now */
+  border-radius: 0 0 var(--border-radius-large) var(--border-radius-large);
+  transition: height var(--transition-smooth);
+}
+
+.time-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255,255,255,0.95);
+  padding: 6px 12px;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 15;
+}
+
+.timer-controls {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+}
+
+/* Timer Colors - simplified */
+.timer-row[data-timer-id="0"] .timer-fill { background-color: var(--timer-1-color); }
+.timer-row[data-timer-id="1"] .timer-fill { background-color: var(--timer-2-color); }
+.timer-row[data-timer-id="2"] .timer-fill { background-color: var(--timer-3-color); }
+.timer-row[data-timer-id="3"] .timer-fill { background-color: var(--timer-4-color); }
+.timer-row[data-timer-id="4"] .timer-fill { background-color: var(--timer-5-color); }
+
+/* App-specific Layouts - simplified */
+.timer-container {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  gap: var(--container-gap);
+}
+
+.timer-container[data-timer-count="5"] {
+  grid-template-rows: 1fr;
+  grid-template-columns: repeat(5, 1fr);
+}

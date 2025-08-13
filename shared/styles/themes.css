@@ -1,0 +1,119 @@
+/**
+ * Themes
+ * @description Color variables and theme definitions for the platform.
+ */
+
+/* CSS Custom Properties - Colors & Themes */
+:root {
+  /* Default Color Theme Palette */
+  --timer-1-color: #FF6B6B;
+  --timer-2-color: #4ECDC4;
+  --timer-3-color: #45B7D1;
+  --timer-4-color: #FFA726;
+  --timer-5-color: #AB47BC;
+
+  /* Extended Palette */
+  --success-color: #28A745;
+  --danger-color: #DC3545;
+  --warning-color: #FFC107;
+  --info-color: #17A2B8;
+  --secondary-color: #6C757D;
+
+  /* Base Theme Colors */
+  --bg-color: #F8F9FA;
+  --panel-bg: #FFFFFF;
+  --text-color: #212529;
+  --text-light: #6C757D;
+  --border-color: #DEE2E6;
+  --hover-bg: #F8F9FA;
+  --shadow: 0 2px 4px rgba(0,0,0,0.1);
+  --shadow-hover: 0 4px 8px rgba(0,0,0,0.15);
+
+  /* Minimal Theme Colors */
+  --minimal-bg-color: #FFFFFF;
+  --minimal-panel-bg: #FAFAFA;
+  --minimal-text-color: #374151;
+  --minimal-text-light: #9CA3AF;
+  --minimal-border-color: #E5E7EB;
+  --minimal-timer-color: #6B7280;
+  --minimal-hover-bg: #F9FAFB;
+}
+
+/* Minimal Theme */
+.minimal-theme {
+  --bg-color: var(--minimal-bg-color);
+  --panel-bg: var(--minimal-panel-bg);
+  --text-color: var(--minimal-text-color);
+  --text-light: var(--minimal-text-light);
+  --border-color: var(--minimal-border-color);
+  --hover-bg: var(--minimal-hover-bg);
+}
+
+.minimal-theme body {
+  background-color: var(--minimal-bg-color);
+  color: var(--minimal-text-color);
+}
+
+.minimal-theme .control-btn {
+  background-color: var(--minimal-panel-bg);
+  color: var(--minimal-text-color);
+  border-color: var(--minimal-border-color);
+}
+
+.minimal-theme .control-btn:hover {
+  background-color: var(--minimal-hover-bg);
+}
+
+.minimal-theme .start-btn {
+  background-color: var(--minimal-timer-color);
+  color: white;
+}
+
+.minimal-theme .start-btn:hover {
+  background-color: #4B5563;
+}
+
+.minimal-theme .modal-content {
+  background-color: var(--minimal-panel-bg);
+  border-color: var(--minimal-border-color);
+}
+
+.minimal-theme .modal-content h3 {
+  color: var(--minimal-text-color);
+}
+
+/* Dark Mode Theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #1a1a1a;
+    --panel-bg: #2d2d2d;
+    --text-color: #ffffff;
+    --text-light: #b0b0b0;
+    --border-color: #404040;
+    --hover-bg: #404040;
+  }
+
+  .modal-content {
+    background-color: #2d2d2d;
+    color: #ffffff;
+  }
+
+  .time-display {
+    background-color: rgba(45, 45, 45, 0.95);
+    color: #ffffff;
+  }
+}
+
+/* High Contrast Mode Color Overrides */
+@media (prefers-contrast: more) {
+  :root {
+    --timer-1-color: #CC0000;
+    --timer-2-color: #006600;
+    --timer-3-color: #0000CC;
+    --timer-4-color: #CC6600;
+    --timer-5-color: #660066;
+    --success-color: #006600;
+    --danger-color: #CC0000;
+    --warning-color: #CC6600;
+  }
+}
