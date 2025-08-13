@@ -46,6 +46,13 @@ export const CONFIG = {
     }
   },
 
+  // Time Format Settings
+  TIME_FORMAT: {
+    SHOW_HOURS: false,
+    SHOW_SECONDS: true,
+    SEPARATOR: ':'
+  },
+
   // Theme System
   THEMES: {
     DEFAULT: 'COLOR',
