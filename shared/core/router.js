@@ -33,7 +33,7 @@ async function loadApp(appName) {
         return;
     }
 
-    const indexPath = `${appPath}index.html`;
+    const indexPath = `${CONFIG.APP.BASE_PATH}${appPath}index.html`;
 
     try {
         const response = await fetch(indexPath);
