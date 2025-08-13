@@ -1,0 +1,142 @@
+.multicount-app {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    height: 100%;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.app-header h1 {
+    font-size: 2rem;
+}
+
+.main-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.main-controls select {
+    padding: 5px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.counters-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.counter-card {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.counter-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+}
+
+.counter-label {
+    font-weight: 600;
+    font-size: 1rem;
+    text-align: center;
+    padding: 5px;
+    border-bottom: 1px solid var(--border-color);
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 100%;
+    color: inherit;
+}
+
+.counter-value {
+    font-size: 3rem;
+    font-weight: 700;
+    text-align: center;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px;
+}
+
+.counter-card-controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.counter-btn {
+    flex: 1;
+    font-size: 1.5rem;
+    padding: 8px 0;
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.decrease-btn {
+    background-color: var(--danger-color);
+    color: white;
+}
+.decrease-btn:hover {
+    opacity: 0.8;
+}
+
+.increase-btn {
+    background-color: var(--success-color);
+    color: white;
+}
+.increase-btn:hover {
+    opacity: 0.8;
+}
+
+.reset-btn {
+    background-color: var(--secondary-color);
+    color: white;
+}
+.reset-btn:hover {
+    opacity: 0.8;
+}
+
+.counter-target-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+.counter-target {
+    width: 70px;
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    text-align: center;
+}
